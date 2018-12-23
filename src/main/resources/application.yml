@@ -1,0 +1,54 @@
+---
+spring:
+  data:
+    rest:
+      base-path: crud
+
+---
+spring:
+  profiles: test
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: 
+    username: 
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  h2:
+    console:
+      # use this to create an h2-only sql admin console within the application
+      enabled: true
+      # go to http://{host}/{path} to see the sql admin console
+      path: /h2-console
+
+---
+spring:
+  profiles: local
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    # database will be stored in ~/db/storedb.mv.db, as a file
+    url: jdbc:h2:c:/cygwin64/home/jojo/db-ubipong-rating
+    username:
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      # use this to create an h2-only sql admin console within the application
+      enabled: true
+      # go to http://{host}/{path} to see the sql admin console
+      path: /h2-console
+
+---
+spring:
+  profiles: dev
+
+---
+spring:
+  profiles: qa
+
+---
+spring:
+  profiles: prod

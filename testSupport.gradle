@@ -1,0 +1,69 @@
+apply plugin: 'java'
+apply plugin: 'groovy'
+
+sourceSets {
+    embeddedTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/embedded/java')
+        }
+        groovy {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/embedded/groovy')
+        }
+        resources.srcDir file('src/embedded/resources')
+    }
+
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration/java')
+        }
+        groovy {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration/groovy')
+        }
+        resources.srcDir file('src/integration/resources')
+    }
+}
+
+configurations {
+    embeddedTestCompile.extendsFrom testCompile
+    embeddedTestRuntime.extendsFrom testRuntime
+
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+}
+
+task embeddedTest(type: Test) {
+    testClassesDirs = sourceSets.embeddedTest.output.classesDirs
+    classpath = sourceSets.embeddedTest.runtimeClasspath
+    systemProperties System.getProperties()
+    outputs.upToDateWhen { false }
+}
+
+task integrationTest(type: Test) {
+    testClassesDirs = sourceSets.integrationTest.output
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    systemProperties System.getProperties()
+    outputs.upToDateWhen { false }
+}
+
+//cucumber() {
+//    formats = [ 'pretty', 'html:build/reports/cucumber' ]
+//    monochrome = false
+//    strict = false
+//    dryRun = false
+//    ignoreFailures = false
+//}
+
+embeddedTest.mustRunAfter test
+
+integrationTest.mustRunAfter test
