@@ -27,8 +27,8 @@ spring:
   profiles: local
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    # database will be stored in ~/db/storedb.mv.db, as a file
-    url: jdbc:h2:c:/cygwin64/home/jojo/db-ubipong-rating
+    # url specifies a file name, appended with ".mv.db"
+    url: jdbc:h2:c:/cygwin64/home/jojo/db/ubipong-rating
     username:
     password:
   jpa:

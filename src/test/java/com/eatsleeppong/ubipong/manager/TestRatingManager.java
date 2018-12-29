@@ -4,23 +4,45 @@ import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@ActiveProfiles("test")
 public class TestRatingManager {
+    private DateFormat df = new SimpleDateFormat("yyyyMMdd");
+    @Autowired
     private RatingManager ratingManager;
 
     private Integer spongeBobId = 1;
     private Integer patrickId = 2;
     private Integer squidwardId = 3;
 
+    private Integer usOpenId = 100;
+    private Integer atlantaOpenId = 101;
+
     private Player spongebob;
     private Player patrick;
     private Player squidward;
 
+    private Date adjustmentDate;
+
     @Before
-    public void setup() {
+    public void setup() throws ParseException {
         Player spongebob = new Player();
         spongebob.setPlayerId(spongeBobId);
 
@@ -30,7 +52,7 @@ public class TestRatingManager {
         Player squidward = new Player();
         squidward.setPlayerId(squidwardId);
 
-        ratingManager = new RatingManager();
+        adjustmentDate = df.parse("20181228");
     }
 
     @Test
@@ -40,20 +62,28 @@ public class TestRatingManager {
 
     @Test
     public void getPlayerRating() {
-        final Integer finalRating = 1200;
+        final Integer expectedFinalRating = 1200;
 
         PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
-        playerRatingAdjustment.setPlayerRatingAdjustmentId(100);
         playerRatingAdjustment.setPlayerId(spongeBobId);
+        playerRatingAdjustment.setAdjustmentDate(adjustmentDate);
+        playerRatingAdjustment.setTournamentId(usOpenId);
         playerRatingAdjustment.setInitialRating(1000);
         playerRatingAdjustment.setFirstPassRating(1100);
-        playerRatingAdjustment.setFinalRating(finalRating);
+        playerRatingAdjustment.setFinalRating(expectedFinalRating);
 
-        ratingManager.adjustRating(playerRatingAdjustment);
+        PlayerRatingAdjustment saved = ratingManager.adjustRating(playerRatingAdjustment);
 
-        PlayerRatingAdjustment ratingAdjustment = ratingManager.getRating(spongeBobId);
+//        PlayerRatingAdjustment ratingAdjustment = ratingManager.getRating(spongeBobId);
+//
+//        assertThat(ratingAdjustment.getFinalRating(), is(finalRating));
+        assertThat(saved.getPlayerRatingAdjustmentId(), notNullValue());
 
-        assertThat(ratingAdjustment.getFinalRating(), is(finalRating));
+        final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
+            () -> new AssertionError("Cannot final rating")
+        );
+
+        assertThat(finalRating.getFinalRating(), is(expectedFinalRating));
     }
 }

@@ -9,6 +9,14 @@ import java.util.Date;
 @Entity
 public class PlayerRatingAdjustment {
     @Id
+//    @TableGenerator(
+//        name = "playerRatingAdjustmentGen",
+//        table = "id_gen",
+//        pkColumnName = "gen_key",
+//        valueColumnName = "get_value",
+//        pkColumnValue = "playerRatingAdjustmentId",
+//        allocationSize = 10)
+//    @GeneratedValue(strategy = GenerationType.TABLE, generator = "playerRatingAdjustmentGen")
     @GeneratedValue
     private Integer playerRatingAdjustmentId;
 
@@ -20,7 +28,7 @@ public class PlayerRatingAdjustment {
 
     @Temporal(TemporalType.DATE)
     @Column(nullable = false)
-    private Date tournamentDate;
+    private Date adjustmentDate;
 
     @Column(nullable = false)
     private Integer initialRating;
