@@ -7,22 +7,27 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.transaction.Transactional;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
 public class TestRatingManager {
     private DateFormat df = new SimpleDateFormat("yyyyMMdd");
     @Autowired
@@ -47,16 +52,13 @@ public class TestRatingManager {
 
     @Before
     public void setup() throws ParseException {
-        Player spongebob = new Player();
-        spongebob.setPlayerId(spongeBobId);
+        spongebob = new Player();
         spongebob.setUserName(spongeBobUserName);
 
-        Player patrick = new Player();
-        patrick.setPlayerId(patrickId);
+        patrick = new Player();
         patrick.setUserName(patrickUserName);
 
-        Player squidward = new Player();
-        squidward.setPlayerId(squidwardId);
+        squidward = new Player();
         squidward.setUserName(squidwardUserName);
 
         adjustmentDate = df.parse("20181228");
@@ -82,9 +84,6 @@ public class TestRatingManager {
 
         final PlayerRatingAdjustment saved = ratingManager.adjustRating(playerRatingAdjustment);
 
-//        PlayerRatingAdjustment ratingAdjustment = ratingManager.getRating(spongeBobId);
-//
-//        assertThat(ratingAdjustment.getFinalRating(), is(finalRating));
         assertThat(saved.getPlayerRatingAdjustmentId(), notNullValue());
 
         final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
@@ -96,17 +95,86 @@ public class TestRatingManager {
 
     @Test
     public void addPlayer() {
-        Player bob = ratingManager.addPlayer(spongebob);
+        final Player bob = ratingManager.addPlayer(spongebob);
 
         assertThat(bob.getPlayerId(), notNullValue());
     }
 
+    @Test(expected = DataIntegrityViolationException.class)
+    public void userNameMustBeUnique() {
+        final String sameUserName = "same_user_name";
+        final Player a = new Player();
+        a.setUserName(sameUserName);
+
+        final Player b = new Player();
+        b.setUserName(sameUserName);
+
+        ratingManager.addPlayer(a);
+        ratingManager.addPlayer(b);
+
+        ratingManager.getPlayer(sameUserName);
+    }
+
     @Test
     public void getPlayerByUserName() {
-        Player bob = ratingManager.addPlayer(spongebob);
+        ratingManager.addPlayer(spongebob);
 
-        assertThat(bob.getPlayerId(), notNullValue());
+        final Player spongebob = ratingManager.getPlayer(spongeBobUserName);
 
-        //ratingManager.addPlayer(
+        assertThat(spongebob.getUserName(), is(spongeBobUserName));
+    }
+
+    @Test
+    public void getPlayerByInvalidUserName() {
+        final Player spongebob = ratingManager.getPlayer(spongeBobUserName);
+
+        assertThat(spongebob, nullValue());
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsv() throws Exception {
+        final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
+        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+
+        final String inputString =
+                "\"Pla\"\"yer\",       Rating\n" +
+                "spongebob,      1000\n" +
+                "\"patrick\",    1100\n";
+
+        ratingManager.adjustRatingByCsv(inputString);
+
+        final Integer spongeBobRating = ratingManager.getRating(spongeBobId)
+                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+        final Integer patrickRating = ratingManager.getRating(patrickId)
+            .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+
+        assertThat(spongeBobRating, is(1000));
+        assertThat(patrickRating, is(1100));
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {
+        final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
+
+        final String tournament1 =
+                "Player,       Rating\n" +
+                "spongebob,      1000\n";
+        final String tournament2 =
+                "Player,       Rating\n" +
+                "spongebob,      1100\n";
+
+        ratingManager.adjustRatingByCsv(tournament1);
+        // when adding a second tournament, the initial rating is taken from the final rating of first tournament
+        ratingManager.adjustRatingByCsv(tournament2);
+
+        List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
+
+        assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
+        assertThat(ratingHistory.get(0).getFirstPassRating(), is(1000));
+        assertThat(ratingHistory.get(0).getInitialRating(), is(1000));
+
+        assertThat(ratingHistory.get(1).getFinalRating(), is(1000));
+        assertThat(ratingHistory.get(1).getFirstPassRating(), is(0));
+        assertThat(ratingHistory.get(1).getInitialRating(), is(0));
     }
 }

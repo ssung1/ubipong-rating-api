@@ -8,19 +8,20 @@ import java.util.Date;
 @Data
 @Entity
 public class PlayerRatingAdjustment {
+    // example of table generator
+    // @TableGenerator(
+    //     name = "playerRatingAdjustmentGen",
+    //     table = "id_gen",
+    //     pkColumnName = "gen_key",
+    //     valueColumnName = "get_value",
+    //     pkColumnValue = "playerRatingAdjustmentId",
+    //     allocationSize = 10)
+    // @GeneratedValue(strategy = GenerationType.TABLE, generator = "playerRatingAdjustmentGen")
     @Id
-//    @TableGenerator(
-//        name = "playerRatingAdjustmentGen",
-//        table = "id_gen",
-//        pkColumnName = "gen_key",
-//        valueColumnName = "get_value",
-//        pkColumnValue = "playerRatingAdjustmentId",
-//        allocationSize = 10)
-//    @GeneratedValue(strategy = GenerationType.TABLE, generator = "playerRatingAdjustmentGen")
     @GeneratedValue
     private Integer playerRatingAdjustmentId;
 
-    @Column(nullable = false)
+    @Column
     private Integer tournamentId;
 
     @Column(nullable = false)

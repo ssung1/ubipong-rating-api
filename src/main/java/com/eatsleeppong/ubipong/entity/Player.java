@@ -14,7 +14,7 @@ public class Player {
     @GeneratedValue
     private Integer playerId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String userName;
 
     private String email;
