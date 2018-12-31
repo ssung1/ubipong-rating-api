@@ -1,8 +1,10 @@
 package com.eatsleeppong.ubipong.manager;
 
+import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.model.MatchResult;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
+import com.eatsleeppong.ubipong.repository.PlayerRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,15 +15,16 @@ import java.util.*;
 
 @Service
 public class RatingManager {
+    private PlayerRepository playerRepository;
     private PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository;
 
     public RatingManager(
-        PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository
+            PlayerRepository playerRepository,
+            PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository
     ) {
+        this.playerRepository = playerRepository;
         this.playerRatingAdjustmentRepository = playerRatingAdjustmentRepository;
     }
-
-    private Map<Integer, List<PlayerRatingAdjustment>> ratingHistoryMap = new HashMap<>();
 
     public Optional<PlayerRatingAdjustment> getRating(Integer playerId) {
        Page<PlayerRatingAdjustment> ratingHistory =
@@ -37,5 +40,17 @@ public class RatingManager {
 
     public PlayerRatingAdjustment adjustRating(PlayerRatingAdjustment playerRatingAdjustment) {
         return playerRatingAdjustmentRepository.save(playerRatingAdjustment);
+    }
+
+    public Player addPlayer(Player player) {
+        return player;
+    }
+
+    public Player getPlayerById(Integer id) {
+        return null;
+    }
+
+    public Player getPlayer(String search) {
+        return null;
     }
 }

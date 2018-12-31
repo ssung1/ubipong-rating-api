@@ -32,6 +32,10 @@ public class TestRatingManager {
     private Integer patrickId = 2;
     private Integer squidwardId = 3;
 
+    private String spongeBobUserName = "spongebob";
+    private String patrickUserName = "patrick";
+    private String squidwardUserName = "squidward";
+
     private Integer usOpenId = 100;
     private Integer atlantaOpenId = 101;
 
@@ -45,12 +49,15 @@ public class TestRatingManager {
     public void setup() throws ParseException {
         Player spongebob = new Player();
         spongebob.setPlayerId(spongeBobId);
+        spongebob.setUserName(spongeBobUserName);
 
         Player patrick = new Player();
         patrick.setPlayerId(patrickId);
+        patrick.setUserName(patrickUserName);
 
         Player squidward = new Player();
         squidward.setPlayerId(squidwardId);
+        squidward.setUserName(squidwardUserName);
 
         adjustmentDate = df.parse("20181228");
     }
@@ -64,7 +71,7 @@ public class TestRatingManager {
     public void getPlayerRating() {
         final Integer expectedFinalRating = 1200;
 
-        PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
+        final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
         playerRatingAdjustment.setPlayerId(spongeBobId);
         playerRatingAdjustment.setAdjustmentDate(adjustmentDate);
@@ -73,7 +80,7 @@ public class TestRatingManager {
         playerRatingAdjustment.setFirstPassRating(1100);
         playerRatingAdjustment.setFinalRating(expectedFinalRating);
 
-        PlayerRatingAdjustment saved = ratingManager.adjustRating(playerRatingAdjustment);
+        final PlayerRatingAdjustment saved = ratingManager.adjustRating(playerRatingAdjustment);
 
 //        PlayerRatingAdjustment ratingAdjustment = ratingManager.getRating(spongeBobId);
 //
@@ -85,5 +92,21 @@ public class TestRatingManager {
         );
 
         assertThat(finalRating.getFinalRating(), is(expectedFinalRating));
+    }
+
+    @Test
+    public void addPlayer() {
+        Player bob = ratingManager.addPlayer(spongebob);
+
+        assertThat(bob.getPlayerId(), notNullValue());
+    }
+
+    @Test
+    public void getPlayerByUserName() {
+        Player bob = ratingManager.addPlayer(spongebob);
+
+        assertThat(bob.getPlayerId(), notNullValue());
+
+        //ratingManager.addPlayer(
     }
 }
