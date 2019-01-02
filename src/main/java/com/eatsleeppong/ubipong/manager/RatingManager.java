@@ -3,6 +3,7 @@ package com.eatsleeppong.ubipong.manager;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.model.MatchResult;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
+import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
 import com.eatsleeppong.ubipong.repository.PlayerRepository;
 import name.subroutine.etable.CsvTable;
@@ -67,6 +68,14 @@ public class RatingManager {
      */
     public Player getPlayer(String search) {
         return playerRepository.findByUserName(search);
+    }
+
+    public RatingAdjustmentResponse verifyRatingByCsv(String csv) throws IOException {
+        return null;
+    }
+
+    public List<PlayerRatingAdjustment> convertCsvToPlayerRatingAdjustment(String csv) throws IOException {
+        return null;
     }
 
     public void adjustRatingByCsv(String csv) throws IOException {

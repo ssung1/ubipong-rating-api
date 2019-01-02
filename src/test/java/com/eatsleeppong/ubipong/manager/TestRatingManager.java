@@ -3,6 +3,7 @@ package com.eatsleeppong.ubipong.manager;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -167,6 +168,32 @@ public class TestRatingManager {
         // when adding a second tournament, the initial rating is taken from the final rating of first tournament
         ratingManager.adjustRatingByCsv(tournament2);
 
+        List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
+
+        assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
+        assertThat(ratingHistory.get(0).getFirstPassRating(), is(1000));
+        assertThat(ratingHistory.get(0).getInitialRating(), is(1000));
+
+        assertThat(ratingHistory.get(1).getFinalRating(), is(1000));
+        assertThat(ratingHistory.get(1).getFirstPassRating(), is(0));
+        assertThat(ratingHistory.get(1).getInitialRating(), is(0));
+    }
+
+    @Test
+    @Ignore("does not work yet")
+    public void adjustPlayerRatingByCsvUnknownPlayer() throws Exception {
+        final String tournament1 =
+                "Player,       Rating\n" +
+                "spongebob,      1000\n";
+        final String tournament2 =
+                "Player,       Rating\n" +
+                "spongebob,      1100\n";
+
+        ratingManager.adjustRatingByCsv(tournament1);
+        // when adding a second tournament, the initial rating is taken from the final rating of first tournament
+        ratingManager.adjustRatingByCsv(tournament2);
+
+        final Integer spongeBobId = ratingManager.getPlayer(spongeBobUserName).getPlayerId();
         List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
 
         assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
