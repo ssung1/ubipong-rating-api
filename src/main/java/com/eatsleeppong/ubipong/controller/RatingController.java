@@ -10,4 +10,6 @@ public class RatingController {
     public String test() {
         return "this is my rating";
     }
+
+    // @RequestMapping("/adjustRating",
 }

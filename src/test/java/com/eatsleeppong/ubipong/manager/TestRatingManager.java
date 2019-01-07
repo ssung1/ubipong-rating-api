@@ -2,6 +2,7 @@ package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
+import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -23,7 +24,9 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -120,16 +123,27 @@ public class TestRatingManager {
     public void getPlayerByUserName() {
         ratingManager.addPlayer(spongebob);
 
-        final Player spongebob = ratingManager.getPlayer(spongeBobUserName);
+        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
 
-        assertThat(spongebob.getUserName(), is(spongeBobUserName));
+        assertTrue(spongebob.isPresent());
+        assertThat(spongebob.get().getUserName(), is(spongeBobUserName));
+        assertThat(spongebob.map(Player::getUserName).orElse(null), is(spongeBobUserName));
+    }
+
+    @Test
+    public void getPlayerById() {
+        final Player spongebob1 = ratingManager.addPlayer(spongebob);
+
+        final Optional<Player> spongebob2 = ratingManager.getPlayerById(spongebob1.getPlayerId());
+
+        assertThat(spongebob2.map(Player::getUserName).orElse(null), is(spongeBobUserName));
     }
 
     @Test
     public void getPlayerByInvalidUserName() {
-        final Player spongebob = ratingManager.getPlayer(spongeBobUserName);
+        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
 
-        assertThat(spongebob, nullValue());
+        assertFalse(spongebob.isPresent());
     }
 
     @Test
@@ -142,7 +156,13 @@ public class TestRatingManager {
                 "spongebob,      1000\n" +
                 "\"patrick\",    1100\n";
 
-        ratingManager.adjustRatingByCsv(inputString);
+        final List<RatingAdjustmentResponse> ratingAdjustmentResponseList =
+                ratingManager.adjustRatingByCsv(inputString, false);
+
+        // header does not get processed
+        assertFalse(ratingAdjustmentResponseList.get(0).getProcessed());
+        assertTrue(ratingAdjustmentResponseList.get(1).getProcessed());
+        assertTrue(ratingAdjustmentResponseList.get(2).getProcessed());
 
         final Integer spongeBobRating = ratingManager.getRating(spongeBobId)
                 .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
@@ -151,6 +171,51 @@ public class TestRatingManager {
 
         assertThat(spongeBobRating, is(1000));
         assertThat(patrickRating, is(1100));
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsvInvalidRating() throws Exception {
+        ratingManager.addPlayer(spongebob).getPlayerId();
+
+        final String inputString = "spongebob,      asdf\n";
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, false).get(0);
+
+        assertFalse(ratingAdjustmentResponse.getProcessed());
+        assertThat(ratingAdjustmentResponse.getRejectReason(),
+                is(RatingAdjustmentResponse.RELECT_REASON_INVALID_RATING));
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsvInvalidPlayerNoAutoAdd() throws Exception {
+        final String inputString = "spongebob,      1000\n";
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, false).get(0);
+
+        assertFalse(ratingAdjustmentResponse.getProcessed());
+        assertThat(ratingAdjustmentResponse.getRejectReason(),
+                is(RatingAdjustmentResponse.RELECT_REASON_INVALID_PLAYER));
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsvInvalidPlayerWithAutoAdd() throws Exception {
+        final String inputString = "spongebob,      1000\n";
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, true).get(0);
+
+        assertTrue(ratingAdjustmentResponse.getProcessed());
+
+        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
+
+        final Integer spongeBobRating = spongebob
+                .flatMap(p -> ratingManager.getRating(p.getPlayerId()))
+                .map(PlayerRatingAdjustment::getFinalRating)
+                .orElse(0);
+
+        assertThat(spongeBobRating, is(1000));
     }
 
     @Test
@@ -164,36 +229,10 @@ public class TestRatingManager {
                 "Player,       Rating\n" +
                 "spongebob,      1100\n";
 
-        ratingManager.adjustRatingByCsv(tournament1);
+        ratingManager.adjustRatingByCsv(tournament1, false);
         // when adding a second tournament, the initial rating is taken from the final rating of first tournament
-        ratingManager.adjustRatingByCsv(tournament2);
+        ratingManager.adjustRatingByCsv(tournament2, false);
 
-        List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
-
-        assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
-        assertThat(ratingHistory.get(0).getFirstPassRating(), is(1000));
-        assertThat(ratingHistory.get(0).getInitialRating(), is(1000));
-
-        assertThat(ratingHistory.get(1).getFinalRating(), is(1000));
-        assertThat(ratingHistory.get(1).getFirstPassRating(), is(0));
-        assertThat(ratingHistory.get(1).getInitialRating(), is(0));
-    }
-
-    @Test
-    @Ignore("does not work yet")
-    public void adjustPlayerRatingByCsvUnknownPlayer() throws Exception {
-        final String tournament1 =
-                "Player,       Rating\n" +
-                "spongebob,      1000\n";
-        final String tournament2 =
-                "Player,       Rating\n" +
-                "spongebob,      1100\n";
-
-        ratingManager.adjustRatingByCsv(tournament1);
-        // when adding a second tournament, the initial rating is taken from the final rating of first tournament
-        ratingManager.adjustRatingByCsv(tournament2);
-
-        final Integer spongeBobId = ratingManager.getPlayer(spongeBobUserName).getPlayerId();
         List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
 
         assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
