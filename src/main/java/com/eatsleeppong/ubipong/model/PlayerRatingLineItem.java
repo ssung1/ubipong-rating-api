@@ -3,7 +3,7 @@ package com.eatsleeppong.ubipong.model;
 import lombok.Data;
 
 @Data
-public class PlayerRating {
+public class PlayerRatingLineItem {
     private String playerUserName;
     private String rating;
 }

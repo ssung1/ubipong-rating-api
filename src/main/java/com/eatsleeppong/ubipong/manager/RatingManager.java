@@ -3,7 +3,7 @@ package com.eatsleeppong.ubipong.manager;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.model.MatchResult;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
-import com.eatsleeppong.ubipong.model.PlayerRating;
+import com.eatsleeppong.ubipong.model.PlayerRatingLineItem;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentRequest;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
@@ -11,7 +11,6 @@ import com.eatsleeppong.ubipong.repository.PlayerRepository;
 import name.subroutine.etable.CsvTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -104,13 +103,13 @@ public class RatingManager {
      * @throws IOException
      */
     public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv) throws IOException {
-        final List<PlayerRating> playerRatingList = new ArrayList<>();
+        final List<PlayerRatingLineItem> playerRatingLineItemList = new ArrayList<>();
         try(
                 final StringReader sr = new StringReader(csv);
                 final BufferedReader br = new BufferedReader(sr)
         ) {
             while(true) {
-                final PlayerRating playerRating = new PlayerRating();
+                final PlayerRatingLineItem playerRating = new PlayerRatingLineItem();
                 final String line = br.readLine();
                 if(line == null) break;
 
@@ -124,7 +123,7 @@ public class RatingManager {
                         playerRating.setRating(record[1].trim());
                     }
 
-                    playerRatingList.add(playerRating);
+                    playerRatingLineItemList.add(playerRating);
                 } catch (Exception ex) {
                     // can't do much
                 }
@@ -132,7 +131,7 @@ public class RatingManager {
         }
 
         final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
-        result.setPlayerRatingList(playerRatingList);
+        result.setPlayerRatingList(playerRatingLineItemList);
         return result;
     }
 
@@ -141,10 +140,10 @@ public class RatingManager {
             final Function<String, Optional<Player>> playerFinder) throws IOException {
 
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
-        final List<PlayerRating> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<RatingAdjustmentResponse> result = new ArrayList<>(playerRatingList.size());
+        final List<PlayerRatingLineItem> playerRatingLineItemList = ratingAdjustmentRequest.getPlayerRatingList();
+        final List<RatingAdjustmentResponse> result = new ArrayList<>(playerRatingLineItemList.size());
 
-        for (PlayerRating playerRating : playerRatingList) {
+        for (PlayerRatingLineItem playerRating : playerRatingLineItemList) {
             final RatingAdjustmentResponse ratingAdjustmentResponse = new RatingAdjustmentResponse();
             result.add(ratingAdjustmentResponse);
             // TODO: ratingAdjustmentResponse.setRatingAdjustmentRequest(playerRating);
