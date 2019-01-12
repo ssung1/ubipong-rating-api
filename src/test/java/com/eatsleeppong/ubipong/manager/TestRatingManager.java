@@ -4,7 +4,9 @@ import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
+import name.subroutine.etable.CsvTable;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +35,8 @@ import static org.junit.Assert.assertTrue;
 @ActiveProfiles("test")
 @Transactional
 public class TestRatingManager {
-    private DateFormat df = new SimpleDateFormat("yyyyMMdd");
+    private final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+
     @Autowired
     private RatingManager ratingManager;
 
@@ -52,7 +55,11 @@ public class TestRatingManager {
     private Player patrick;
     private Player squidward;
 
-    private Date adjustmentDate;
+    private final String tournamentName1 = "test-tournament-1";
+    private final String tournamentName2 = "test-tournament-2";
+
+    private final String tournamentDate1 = "2018-12-28T00:00:00-0500";
+    private final String tournamentDate2 = "2019-01-12T00:00:00-0500";
 
     @Before
     public void setup() throws ParseException {
@@ -64,8 +71,6 @@ public class TestRatingManager {
 
         squidward = new Player();
         squidward.setUserName(squidwardUserName);
-
-        adjustmentDate = df.parse("20181228");
     }
 
     @Test
@@ -74,13 +79,25 @@ public class TestRatingManager {
     }
 
     @Test
-    public void getPlayerRating() {
+    public void testCsvParserQuotedFirstCell() {
+        final String[] result = CsvTable.toArray("\"a\"");
+        assertThat(result[0], is("a"));
+    }
+
+    @Test
+    public void testCsvParserQuotedSecondCell() {
+        final String[] result = CsvTable.toArray("x,\"a\"");
+        assertThat(result[1], is("a"));
+    }
+
+    @Test
+    public void getPlayerRating() throws Exception {
         final Integer expectedFinalRating = 1200;
 
         final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
         playerRatingAdjustment.setPlayerId(spongeBobId);
-        playerRatingAdjustment.setAdjustmentDate(adjustmentDate);
+        playerRatingAdjustment.setAdjustmentDate(df.parse(tournamentDate1));
         playerRatingAdjustment.setTournamentId(usOpenId);
         playerRatingAdjustment.setInitialRating(1000);
         playerRatingAdjustment.setFirstPassRating(1100);
@@ -152,7 +169,10 @@ public class TestRatingManager {
         final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
 
         final String inputString =
-                "\"Pla\"\"yer\",       Rating\n" +
+                "tournamentName, test-tournament-1\n" +
+                "date, 2019-01-01T00:00:00-0500\n" +
+                "player, rating\n" +
+                "\"inva\"\"lid\",       Rating\n" +
                 "spongebob,      1000\n" +
                 "\"patrick\",    1100\n";
 
@@ -161,9 +181,8 @@ public class TestRatingManager {
         final List<PlayerRatingLineItemResult> playerRatingResultList =
                 ratingAdjustmentResponse.getPlayerRatingResultList();
 
-        // header does not get processed
         assertFalse(playerRatingResultList.get(0).getProcessed());
-        assertThat(playerRatingResultList.get(0).getOriginalRequest().getPlayerUserName(), is("Pla\"yer"));
+        assertThat(playerRatingResultList.get(0).getOriginalRequest().getPlayerUserName(), is("inva\"lid"));
         assertThat(playerRatingResultList.get(0).getOriginalRequest().getRating(), is("Rating"));
         assertTrue(playerRatingResultList.get(1).getProcessed());
         assertThat(playerRatingResultList.get(1).getOriginalRequest().getPlayerUserName(), is("spongebob"));
@@ -185,7 +204,11 @@ public class TestRatingManager {
     public void adjustPlayerRatingByCsvInvalidRating() throws Exception {
         ratingManager.addPlayer(spongebob).getPlayerId();
 
-        final String inputString = "spongebob,      asdf\n";
+        final String inputString =
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      asdf\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
@@ -195,12 +218,16 @@ public class TestRatingManager {
 
         assertFalse(playerRatingResult.getProcessed());
         assertThat(playerRatingResult.getRejectReason(),
-                is(PlayerRatingLineItemResult.RELECT_REASON_INVALID_RATING));
+                is(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING));
     }
 
     @Test
     public void adjustPlayerRatingByCsvInvalidPlayerNoAutoAdd() throws Exception {
-        final String inputString = "spongebob,      1000\n";
+        final String inputString =
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
@@ -210,12 +237,16 @@ public class TestRatingManager {
 
         assertFalse(playerRatingResult.getProcessed());
         assertThat(playerRatingResult.getRejectReason(),
-                is(PlayerRatingLineItemResult.RELECT_REASON_INVALID_PLAYER));
+                is(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER));
     }
 
     @Test
     public void adjustPlayerRatingByCsvInvalidPlayerWithAutoAdd() throws Exception {
-        final String inputString = "spongebob,      1000\n";
+        final String inputString =
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, true);
@@ -236,13 +267,54 @@ public class TestRatingManager {
     }
 
     @Test
+    public void adjustPlayerRatingByCsvSetTournamentInfo() throws Exception {
+        final String inputString =
+                "tournamentName, " + tournamentName1 + "\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n";
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+            ratingManager.adjustRatingByCsv(inputString, true);
+
+        assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
+        assertThat(ratingAdjustmentResponse.getTournamentDate(), is(df.parse(tournamentDate1)));
+        final List<PlayerRatingLineItemResult> playerRatingResultList =
+            ratingAdjustmentResponse.getPlayerRatingResultList();
+        final PlayerRatingLineItemResult playerRatingResult = playerRatingResultList.get(0);
+
+        assertTrue(playerRatingResult.getProcessed());
+
+        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
+        final Date spongeBobAdjustmentDate = spongebob
+            .flatMap(p -> ratingManager.getRating(p.getPlayerId()))
+            .map(PlayerRatingAdjustment::getAdjustmentDate)
+            .orElse(null);
+
+        assertThat(spongeBobAdjustmentDate, is(df.parse(tournamentDate1)));
+    }
+
+    @Test
+    @Ignore
+    public void reportErrorIfCsvDoesNotFollowFormat() {}
+
+    @Test
+    @Ignore
+    public void createTournament() {}
+
+    @Test
     public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {
         final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
 
         final String tournament1 =
-                "Player,       Rating\n" +
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
                 "spongebob,      1000\n";
         final String tournament2 =
+                "tournamentName, test-tournament-2\n" +
+                "date, " + tournamentDate2 + "\n" +
+                "player, rating\n" +
                 "Player,       Rating\n" +
                 "spongebob,      1100\n";
 

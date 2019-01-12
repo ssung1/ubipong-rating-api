@@ -14,11 +14,16 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 
 @Service
 public class RatingManager {
+    private final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+
     private PlayerRepository playerRepository;
     private PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository;
 
@@ -88,7 +93,7 @@ public class RatingManager {
     /**
      * @param csv has two columns
      *     <pre>
-     *     line 1                tournamentId         , {tournament ID (optional)}
+     *     line 1                tournamentName       , {tournament name}
      *     line 2                date                 , {date, in ISO8601 format}
      *     line 3                player               , rating
      *     line 4                {player1_username}   , {player1_rating}
@@ -99,12 +104,21 @@ public class RatingManager {
      * @return
      * @throws IOException
      */
-    public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv) throws IOException {
+    public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv)
+            throws IOException, ParseException {
+        final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
         final List<PlayerRatingLineItem> playerRatingLineItemList = new ArrayList<>();
         try(
                 final StringReader sr = new StringReader(csv);
                 final BufferedReader br = new BufferedReader(sr)
         ) {
+            final String[] tournamentName = CsvTable.toArray(br.readLine());
+            final String[] tournamentDate = CsvTable.toArray(br.readLine());
+            final String[] ratingHeader = CsvTable.toArray(br.readLine());
+
+            result.setTournamentName(tournamentName[1].trim());
+            result.setTournamentDate(df.parse(tournamentDate[1].trim()));
+
             while(true) {
                 final PlayerRatingLineItem playerRating = new PlayerRatingLineItem();
                 final String line = br.readLine();
@@ -127,18 +141,22 @@ public class RatingManager {
             }
         }
 
-        final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
         result.setPlayerRatingList(playerRatingLineItemList);
         return result;
     }
 
     private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
             final String csv,
-            final Function<String, Optional<Player>> playerFinder) throws IOException {
+            final Function<String, Optional<Player>> playerFinder)
+            throws IOException, ParseException {
 
+        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
         final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
+
+        result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
+        result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
             final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
@@ -153,7 +171,7 @@ public class RatingManager {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
             } else {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.RELECT_REASON_INVALID_PLAYER);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER);
                 continue;
             }
 
@@ -165,10 +183,10 @@ public class RatingManager {
                 playerRatingAdjustment.setInitialRating(prevRating);
                 playerRatingAdjustment.setFirstPassRating(prevRating);
                 playerRatingAdjustment.setFinalRating(rating);
-                playerRatingAdjustment.setAdjustmentDate(new Date());
+                playerRatingAdjustment.setAdjustmentDate(ratingAdjustmentRequest.getTournamentDate());
             } catch (Exception ex) {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.RELECT_REASON_INVALID_RATING);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
                 continue;
             }
 
@@ -177,12 +195,12 @@ public class RatingManager {
             playerRatingResult.setProcessed(true);
         }
 
-        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         result.setPlayerRatingResultList(playerRatingResultList);
         return result;
     }
 
-    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer) throws IOException {
+    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer)
+            throws IOException, ParseException {
         if (autoAddPlayer) {
             return adjustRatingByCsvWithPlayerFinder(csv, (username) -> {
                 final Optional<Player> existing = playerRepository.findByUserName(username);

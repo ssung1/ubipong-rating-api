@@ -8,8 +8,8 @@ import java.util.List;
 
 @Data
 public class PlayerRatingLineItemResult {
-    public static Integer RELECT_REASON_INVALID_PLAYER = 100;
-    public static Integer RELECT_REASON_INVALID_RATING = 101;
+    public static Integer REJECT_REASON_INVALID_PLAYER = 400;
+    public static Integer REJECT_REASON_INVALID_RATING = 401;
 
     private PlayerRatingLineItem originalRequest;
     private PlayerRatingAdjustment adjustmentResult;

@@ -40,7 +40,7 @@ Deploy:
 Rating adjustment only contains the players and the ratings.  These are not match results.  This is useful if you
 have lost the results and only want to update the player ratings.  The format of the payload is text/csv:
 
-    line 1                tournamentId         , {tournament ID (optional)}
+    line 1                tournamentId         , {tournament name}
     line 2                date                 , {date, in ISO8601 format}
     line 3                player               , rating
     line 4                {player1_username}   , {player1_rating}
