@@ -2,9 +2,9 @@ package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
+import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -156,13 +156,21 @@ public class TestRatingManager {
                 "spongebob,      1000\n" +
                 "\"patrick\",    1100\n";
 
-        final List<RatingAdjustmentResponse> ratingAdjustmentResponseList =
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, false);
+        final List<PlayerRatingLineItemResult> playerRatingResultList =
+                ratingAdjustmentResponse.getPlayerRatingResultList();
 
         // header does not get processed
-        assertFalse(ratingAdjustmentResponseList.get(0).getProcessed());
-        assertTrue(ratingAdjustmentResponseList.get(1).getProcessed());
-        assertTrue(ratingAdjustmentResponseList.get(2).getProcessed());
+        assertFalse(playerRatingResultList.get(0).getProcessed());
+        assertThat(playerRatingResultList.get(0).getOriginalRequest().getPlayerUserName(), is("Pla\"yer"));
+        assertThat(playerRatingResultList.get(0).getOriginalRequest().getRating(), is("Rating"));
+        assertTrue(playerRatingResultList.get(1).getProcessed());
+        assertThat(playerRatingResultList.get(1).getOriginalRequest().getPlayerUserName(), is("spongebob"));
+        assertThat(playerRatingResultList.get(1).getOriginalRequest().getRating(), is("1000"));
+        assertTrue(playerRatingResultList.get(2).getProcessed());
+        assertThat(playerRatingResultList.get(2).getOriginalRequest().getPlayerUserName(), is("patrick"));
+        assertThat(playerRatingResultList.get(2).getOriginalRequest().getRating(), is("1100"));
 
         final Integer spongeBobRating = ratingManager.getRating(spongeBobId)
                 .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
@@ -180,11 +188,14 @@ public class TestRatingManager {
         final String inputString = "spongebob,      asdf\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
-                ratingManager.adjustRatingByCsv(inputString, false).get(0);
+            ratingManager.adjustRatingByCsv(inputString, false);
+        final List<PlayerRatingLineItemResult> playerRatingResultList =
+            ratingAdjustmentResponse.getPlayerRatingResultList();
+        final PlayerRatingLineItemResult playerRatingResult = playerRatingResultList.get(0);
 
-        assertFalse(ratingAdjustmentResponse.getProcessed());
-        assertThat(ratingAdjustmentResponse.getRejectReason(),
-                is(RatingAdjustmentResponse.RELECT_REASON_INVALID_RATING));
+        assertFalse(playerRatingResult.getProcessed());
+        assertThat(playerRatingResult.getRejectReason(),
+                is(PlayerRatingLineItemResult.RELECT_REASON_INVALID_RATING));
     }
 
     @Test
@@ -192,11 +203,14 @@ public class TestRatingManager {
         final String inputString = "spongebob,      1000\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
-                ratingManager.adjustRatingByCsv(inputString, false).get(0);
+            ratingManager.adjustRatingByCsv(inputString, false);
+        final List<PlayerRatingLineItemResult> playerRatingResultList =
+            ratingAdjustmentResponse.getPlayerRatingResultList();
+        final PlayerRatingLineItemResult playerRatingResult = playerRatingResultList.get(0);
 
-        assertFalse(ratingAdjustmentResponse.getProcessed());
-        assertThat(ratingAdjustmentResponse.getRejectReason(),
-                is(RatingAdjustmentResponse.RELECT_REASON_INVALID_PLAYER));
+        assertFalse(playerRatingResult.getProcessed());
+        assertThat(playerRatingResult.getRejectReason(),
+                is(PlayerRatingLineItemResult.RELECT_REASON_INVALID_PLAYER));
     }
 
     @Test
@@ -204,9 +218,12 @@ public class TestRatingManager {
         final String inputString = "spongebob,      1000\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
-                ratingManager.adjustRatingByCsv(inputString, true).get(0);
+            ratingManager.adjustRatingByCsv(inputString, true);
+        final List<PlayerRatingLineItemResult> playerRatingResultList =
+            ratingAdjustmentResponse.getPlayerRatingResultList();
+        final PlayerRatingLineItemResult playerRatingResult = playerRatingResultList.get(0);
 
-        assertTrue(ratingAdjustmentResponse.getProcessed());
+        assertTrue(playerRatingResult.getProcessed());
 
         final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
 

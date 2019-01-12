@@ -1,11 +1,8 @@
 package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.entity.Player;
-import com.eatsleeppong.ubipong.model.MatchResult;
+import com.eatsleeppong.ubipong.model.*;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
-import com.eatsleeppong.ubipong.model.PlayerRatingLineItem;
-import com.eatsleeppong.ubipong.model.RatingAdjustmentRequest;
-import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
 import com.eatsleeppong.ubipong.repository.PlayerRepository;
 import name.subroutine.etable.CsvTable;
@@ -84,7 +81,7 @@ public class RatingManager {
         return Optional.of(playerRepository.save(newUser));
     }
 
-    public RatingAdjustmentResponse verifyRatingByCsv(String csv) throws IOException {
+    public PlayerRatingLineItemResult verifyRatingByCsv(String csv) throws IOException {
         return null;
     }
 
@@ -135,18 +132,18 @@ public class RatingManager {
         return result;
     }
 
-    private List<RatingAdjustmentResponse> adjustRatingByCsvWithPlayerFinder(
+    private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
             final String csv,
             final Function<String, Optional<Player>> playerFinder) throws IOException {
 
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
-        final List<PlayerRatingLineItem> playerRatingLineItemList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<RatingAdjustmentResponse> result = new ArrayList<>(playerRatingLineItemList.size());
+        final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
+        final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
 
-        for (PlayerRatingLineItem playerRating : playerRatingLineItemList) {
-            final RatingAdjustmentResponse ratingAdjustmentResponse = new RatingAdjustmentResponse();
-            result.add(ratingAdjustmentResponse);
-            // TODO: ratingAdjustmentResponse.setRatingAdjustmentRequest(playerRating);
+        for (PlayerRatingLineItem playerRating : playerRatingList) {
+            final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
+            playerRatingResultList.add(playerRatingResult);
+            playerRatingResult.setOriginalRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
@@ -155,8 +152,8 @@ public class RatingManager {
             if (player.isPresent()) {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
             } else {
-                ratingAdjustmentResponse.setProcessed(false);
-                ratingAdjustmentResponse.setRejectReason(RatingAdjustmentResponse.RELECT_REASON_INVALID_PLAYER);
+                playerRatingResult.setProcessed(false);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.RELECT_REASON_INVALID_PLAYER);
                 continue;
             }
 
@@ -170,20 +167,22 @@ public class RatingManager {
                 playerRatingAdjustment.setFinalRating(rating);
                 playerRatingAdjustment.setAdjustmentDate(new Date());
             } catch (Exception ex) {
-                ratingAdjustmentResponse.setProcessed(false);
-                ratingAdjustmentResponse.setRejectReason(RatingAdjustmentResponse.RELECT_REASON_INVALID_RATING);
+                playerRatingResult.setProcessed(false);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.RELECT_REASON_INVALID_RATING);
                 continue;
             }
 
             playerRatingAdjustmentRepository.save(playerRatingAdjustment);
-            ratingAdjustmentResponse.setPlayerRatingAdjustment(playerRatingAdjustment);
-            ratingAdjustmentResponse.setProcessed(true);
+            playerRatingResult.setAdjustmentResult(playerRatingAdjustment);
+            playerRatingResult.setProcessed(true);
         }
 
+        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
+        result.setPlayerRatingResultList(playerRatingResultList);
         return result;
     }
 
-    public List<RatingAdjustmentResponse> adjustRatingByCsv(final String csv, boolean autoAddPlayer) throws IOException {
+    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer) throws IOException {
         if (autoAddPlayer) {
             return adjustRatingByCsvWithPlayerFinder(csv, (username) -> {
                 final Optional<Player> existing = playerRepository.findByUserName(username);

@@ -1,6 +1,7 @@
 package com.eatsleeppong.ubipong.controller;
 
 import com.eatsleeppong.ubipong.manager.RatingManager;
+import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +24,7 @@ public class RatingController {
     }
 
     @PostMapping(value = "/rating-adjustment", consumes = "text/csv", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<RatingAdjustmentResponse> ratingAdjustment(@RequestBody String ratingAdjustmentCsv)
+    public RatingAdjustmentResponse ratingAdjustment(@RequestBody String ratingAdjustmentCsv)
             throws IOException {
         return this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, true);
     }
