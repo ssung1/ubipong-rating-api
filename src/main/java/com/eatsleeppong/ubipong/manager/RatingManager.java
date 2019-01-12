@@ -3,6 +3,7 @@ package com.eatsleeppong.ubipong.manager;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.model.MatchResult;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
+import com.eatsleeppong.ubipong.model.PlayerRating;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentRequest;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
@@ -90,21 +91,26 @@ public class RatingManager {
 
     /**
      * @param csv has two columns
-     *            <pre>
-     *                playerUserName, rating
-     *            </pre>
+     *     <pre>
+     *     line 1                tournamentId         , {tournament ID (optional)}
+     *     line 2                date                 , {date, in ISO8601 format}
+     *     line 3                player               , rating
+     *     line 4                {player1_username}   , {player1_rating}
+     *     line 5                {player2_username}   , {player2_rating}
+     *     line 6                {player3_username}   , {player3_rating}
+     *     </pre>
      *
      * @return
      * @throws IOException
      */
-    public List<RatingAdjustmentRequest> convertCsvToPlayerRatingAdjustment(final String csv) throws IOException {
-        final List<RatingAdjustmentRequest> result = new ArrayList<>();
+    public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv) throws IOException {
+        final List<PlayerRating> playerRatingList = new ArrayList<>();
         try(
                 final StringReader sr = new StringReader(csv);
                 final BufferedReader br = new BufferedReader(sr)
         ) {
             while(true) {
-                final RatingAdjustmentRequest ratingAdjustmentRequest = new RatingAdjustmentRequest();
+                final PlayerRating playerRating = new PlayerRating();
                 final String line = br.readLine();
                 if(line == null) break;
 
@@ -112,19 +118,21 @@ public class RatingManager {
 
                 try {
                     if (record.length > 0) {
-                        ratingAdjustmentRequest.setPlayerUserName(record[0].trim());
+                        playerRating.setPlayerUserName(record[0].trim());
                     }
                     if (record.length > 1) {
-                        ratingAdjustmentRequest.setRating(record[1].trim());
+                        playerRating.setRating(record[1].trim());
                     }
 
-                    result.add(ratingAdjustmentRequest);
+                    playerRatingList.add(playerRating);
                 } catch (Exception ex) {
                     // can't do much
                 }
             }
         }
 
+        final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
+        result.setPlayerRatingList(playerRatingList);
         return result;
     }
 
@@ -132,17 +140,18 @@ public class RatingManager {
             final String csv,
             final Function<String, Optional<Player>> playerFinder) throws IOException {
 
-        final List<RatingAdjustmentRequest> ratingAdjustmentRequestList = convertCsvToPlayerRatingAdjustment(csv);
-        final List<RatingAdjustmentResponse> result = new ArrayList<>(ratingAdjustmentRequestList.size());
+        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
+        final List<PlayerRating> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
+        final List<RatingAdjustmentResponse> result = new ArrayList<>(playerRatingList.size());
 
-        for (RatingAdjustmentRequest ratingAdjustmentRequest : ratingAdjustmentRequestList) {
+        for (PlayerRating playerRating : playerRatingList) {
             final RatingAdjustmentResponse ratingAdjustmentResponse = new RatingAdjustmentResponse();
             result.add(ratingAdjustmentResponse);
-            ratingAdjustmentResponse.setRatingAdjustmentRequest(ratingAdjustmentRequest);
+            // TODO: ratingAdjustmentResponse.setRatingAdjustmentRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
-            final String playerUserName = ratingAdjustmentRequest.getPlayerUserName();
+            final String playerUserName = playerRating.getPlayerUserName();
             final Optional<Player> player = playerFinder.apply(playerUserName);
             if (player.isPresent()) {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
@@ -153,7 +162,7 @@ public class RatingManager {
             }
 
             try {
-                final Integer rating = Integer.parseInt(ratingAdjustmentRequest.getRating());
+                final Integer rating = Integer.parseInt(playerRating.getRating());
                 final Integer prevRating = getRating(player.get().getPlayerId())
                         .map(PlayerRatingAdjustment::getFinalRating)
                         .orElse(0);

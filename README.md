@@ -33,3 +33,18 @@ If application does not yet exist on Heroku:
 Deploy:
 
     heroku deploy:jar target/my-app.jar --app sushi
+
+
+## Uploading Rating Adjustment
+
+Rating adjustment only contains the players and the ratings.  These are not match results.  This is useful if you
+have lost the results and only want to update the player ratings.  The format of the payload is text/csv:
+
+    line 1                tournamentId         , {tournament ID (optional)}
+    line 2                date                 , {date, in ISO8601 format}
+    line 3                player               , rating
+    line 4                {player1_username}   , {player1_rating}
+    line 5                {player2_username}   , {player2_rating}
+    line 6                {player3_username}   , {player3_rating}
+    ...
+

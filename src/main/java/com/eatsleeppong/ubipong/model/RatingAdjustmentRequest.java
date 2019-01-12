@@ -2,8 +2,13 @@ package com.eatsleeppong.ubipong.model;
 
 import lombok.Data;
 
+import java.util.Date;
+import java.util.List;
+
 @Data
 public class RatingAdjustmentRequest {
-    private String playerUserName;
-    private String rating;
+    private String tournamentName;
+    private Date tournamentDate;
+
+    private List<PlayerRating> playerRatingList;
 }
