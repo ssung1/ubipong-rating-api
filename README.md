@@ -19,3 +19,17 @@
   rounds.
 
 - Match
+
+## Deploying to Heroku
+
+If Java plugin has not been installed:
+
+    heroku plugins:install java
+
+If application does not yet exist on Heroku:
+
+    heroku create --no-remote
+
+Deploy:
+
+    heroku deploy:jar target/my-app.jar --app sushi
