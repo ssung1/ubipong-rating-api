@@ -296,10 +296,6 @@ public class TestRatingManager {
 
     @Test
     @Ignore
-    public void reportErrorIfCsvDoesNotFollowFormat() {}
-
-    @Test
-    @Ignore
     public void createTournament() {}
 
     @Test

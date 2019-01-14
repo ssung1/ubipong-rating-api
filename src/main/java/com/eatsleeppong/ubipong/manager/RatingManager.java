@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.manager;
 
+import com.eatsleeppong.ubipong.controller.RatingInputFormatException;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.model.*;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
@@ -9,16 +10,23 @@ import name.subroutine.etable.CsvTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Service
 public class RatingManager {
@@ -91,6 +99,31 @@ public class RatingManager {
     }
 
     /**
+     * called exclusively by convertCsvToPlayerRatingAdjustment to process a line of header
+     *
+     * @param line one line from the CSV
+     * @param lineNumber line number (for better error reporting)
+     * @param contentName what we are expecting in that line
+     * @param action what we want to do with the content
+     */
+    private void processHeaderLine(final String line, final int lineNumber, final String contentName, Consumer<String> action)
+            throws RatingInputFormatException {
+        if (line == null) {
+            throw new RatingInputFormatException(MessageFormat.format("Missing line {0}", lineNumber));
+        }
+        try {
+            final String[] values = CsvTable.toArray(line);
+            action.accept(values[1].trim());
+        } catch (ArrayIndexOutOfBoundsException outOfBounds) {
+            throw new RatingInputFormatException(MessageFormat.format(
+                    "Missing {0} on line {1}: {2}", contentName, lineNumber, line));
+        } catch (Exception ex) {
+            throw new RatingInputFormatException(MessageFormat.format(
+                    "Could not understand {0} on line {1}: {2}", contentName, lineNumber, line));
+        }
+    }
+
+    /**
      * @param csv has two columns
      *     <pre>
      *     line 1                tournamentName       , {tournament name}
@@ -105,19 +138,26 @@ public class RatingManager {
      * @throws IOException
      */
     public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv)
-            throws IOException, ParseException {
+            throws IOException, RatingInputFormatException {
         final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
         final List<PlayerRatingLineItem> playerRatingLineItemList = new ArrayList<>();
         try(
                 final StringReader sr = new StringReader(csv);
                 final BufferedReader br = new BufferedReader(sr)
         ) {
-            final String[] tournamentName = CsvTable.toArray(br.readLine());
-            final String[] tournamentDate = CsvTable.toArray(br.readLine());
-            final String[] ratingHeader = CsvTable.toArray(br.readLine());
-
-            result.setTournamentName(tournamentName[1].trim());
-            result.setTournamentDate(df.parse(tournamentDate[1].trim()));
+            processHeaderLine(br.readLine(), 1, "tournament name", result::setTournamentName);
+            processHeaderLine(br.readLine(), 2, "tournament date", (s) -> {
+                try {
+                    result.setTournamentDate(df.parse(s));
+                } catch (ParseException ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+            processHeaderLine(br.readLine(), 3, "player rating header", (s) -> {
+                if (!s.equals("rating")) {
+                    throw new RuntimeException();
+                }
+            });
 
             while(true) {
                 final PlayerRatingLineItem playerRating = new PlayerRatingLineItem();
@@ -148,7 +188,7 @@ public class RatingManager {
     private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
             final String csv,
             final Function<String, Optional<Player>> playerFinder)
-            throws IOException, ParseException {
+            throws IOException, RatingInputFormatException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
@@ -200,7 +240,7 @@ public class RatingManager {
     }
 
     public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer)
-            throws IOException, ParseException {
+            throws IOException, RatingInputFormatException {
         if (autoAddPlayer) {
             return adjustRatingByCsvWithPlayerFinder(csv, (username) -> {
                 final Optional<Player> existing = playerRepository.findByUserName(username);
