@@ -18,7 +18,7 @@ public class PlayerRatingAdjustment {
     //     allocationSize = 10)
     // @GeneratedValue(strategy = GenerationType.TABLE, generator = "playerRatingAdjustmentGen")
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "player_rating_adjustment_seq")
     private Integer playerRatingAdjustmentId;
 
     @Column

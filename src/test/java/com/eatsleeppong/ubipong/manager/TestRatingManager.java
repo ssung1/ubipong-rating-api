@@ -299,6 +299,14 @@ public class TestRatingManager {
     public void createTournament() {}
 
     @Test
+    @Ignore
+    public void dryRunWithSummaryOfFailedOnly() {}
+
+    @Test
+    @Ignore
+    public void failIfDuplicateTournament() {}
+
+    @Test
     public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {
         final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
 
