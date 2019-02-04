@@ -2,10 +2,12 @@ package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.controller.RatingInputFormatException;
 import com.eatsleeppong.ubipong.entity.Player;
+import com.eatsleeppong.ubipong.entity.Tournament;
 import com.eatsleeppong.ubipong.model.*;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.repository.PlayerRatingAdjustmentRepository;
 import com.eatsleeppong.ubipong.repository.PlayerRepository;
+import com.eatsleeppong.ubipong.repository.TournamentRepository;
 import name.subroutine.etable.CsvTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,13 +36,16 @@ public class RatingManager {
 
     private PlayerRepository playerRepository;
     private PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository;
+    private TournamentRepository tournamentRepository;
 
     public RatingManager(
             PlayerRepository playerRepository,
-            PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository
+            PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository,
+            TournamentRepository tournamentRepository
     ) {
         this.playerRepository = playerRepository;
         this.playerRatingAdjustmentRepository = playerRatingAdjustmentRepository;
+        this.tournamentRepository = tournamentRepository;
     }
 
     public Optional<PlayerRatingAdjustment> getRating(Integer playerId) {
@@ -195,8 +200,11 @@ public class RatingManager {
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
         final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
 
+        Tournament tournament = new Tournament();
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
+        tournament.setName(ratingAdjustmentRequest.getTournamentName());
         result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+        tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
             final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
@@ -242,17 +250,37 @@ public class RatingManager {
     public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer)
             throws IOException, RatingInputFormatException {
         if (autoAddPlayer) {
-            return adjustRatingByCsvWithPlayerFinder(csv, (username) -> {
-                final Optional<Player> existing = playerRepository.findByUserName(username);
-                if (existing.isPresent()) return existing;
-
-                final Player newUser = new Player();
-                newUser.setUserName(username);
-
-                return Optional.of(playerRepository.save(newUser));
-            });
+            return adjustRatingByCsvWithPlayerFinder(csv, this::getOrCreatePlayer);
         } else {
             return adjustRatingByCsvWithPlayerFinder(csv, playerRepository::findByUserName);
         }
+    }
+
+    public Tournament addTournament(Tournament tournament) {
+        return tournamentRepository.save(tournament);
+    }
+
+    public Optional<Tournament> getTournamentById(Integer id) {
+        return tournamentRepository.findById(id);
+    }
+
+    /**
+     * @param search can be ID, username, or {firstname lastname}
+     * @return
+     */
+    public Optional<Tournament> getTournament(String search) {
+        return tournamentRepository.findByName(search);
+    }
+
+    public Optional<Tournament> getOrCreateTournament(String name) {
+        final Optional<Tournament> existing = getTournament(name);
+        if (existing.isPresent()) {
+            return existing;
+        }
+        final Tournament newTournament = new Tournament();
+        // the search term becomes username
+        newTournament.setName(name);
+
+        return Optional.of(tournamentRepository.save(newTournament));
     }
 }

@@ -2,6 +2,7 @@ package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
+import com.eatsleeppong.ubipong.entity.Tournament;
 import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import name.subroutine.etable.CsvTable;
@@ -295,8 +296,21 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore
-    public void createTournament() {}
+    public void adjustPlayerRatingByCsvAutoAddTournament() throws Exception {
+        final String inputString =
+                "tournamentName, " + tournamentName1 + "\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n";
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, true);
+
+        final Optional<Tournament> tournament = ratingManager.getTournament(tournamentName1);
+
+        assertThat(tournament.isPresent(), is(true));
+        assertThat(tournament.get().getName(), is(tournamentName1));
+    }
 
     @Test
     @Ignore
