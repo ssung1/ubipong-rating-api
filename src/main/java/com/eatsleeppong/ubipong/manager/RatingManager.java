@@ -201,10 +201,12 @@ public class RatingManager {
         final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
 
         Tournament tournament = new Tournament();
-        result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
         tournament.setName(ratingAdjustmentRequest.getTournamentName());
-        result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
         tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+        tournamentRepository.save(tournament);
+
+        result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+        result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
             final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();

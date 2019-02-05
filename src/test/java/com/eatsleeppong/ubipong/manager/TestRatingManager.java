@@ -24,9 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -303,13 +301,13 @@ public class TestRatingManager {
                 "player, rating\n" +
                 "spongebob,      1000\n";
 
-        final RatingAdjustmentResponse ratingAdjustmentResponse =
-                ratingManager.adjustRatingByCsv(inputString, true);
+        ratingManager.adjustRatingByCsv(inputString, true);
 
         final Optional<Tournament> tournament = ratingManager.getTournament(tournamentName1);
 
         assertThat(tournament.isPresent(), is(true));
         assertThat(tournament.get().getName(), is(tournamentName1));
+        assertThat(tournament.get().getTournamentId(), is(greaterThan(0)));
     }
 
     @Test
