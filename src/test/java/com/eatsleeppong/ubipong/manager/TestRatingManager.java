@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.manager;
 
+import com.eatsleeppong.ubipong.controller.DuplicateTournamentException;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
@@ -311,12 +312,37 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore
-    public void dryRunWithSummaryOfFailedOnly() {}
+    public void dryRunWithSummaryOfFailedOnly() throws Exception {
+        final String inputString =
+                "tournamentName, " + tournamentName1 + "\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n" +
+                "patrick,        \n";
 
-    @Test
-    @Ignore
-    public void failIfDuplicateTournament() {}
+        ratingManager.addPlayer(patrick);
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.verifyRatingByCsv(inputString);
+        final List<PlayerRatingLineItemResult> playerRatingLineItemResultList =
+                ratingAdjustmentResponse.getPlayerRatingResultList();
+
+        assertThat(playerRatingLineItemResultList.get(0).getRejectReason(),
+                is(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER));
+        assertThat(playerRatingLineItemResultList.get(1).getRejectReason(),
+            is(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING));
+    }
+
+    @Test(expected = DuplicateTournamentException.class)
+    public void failIfDuplicateTournament() throws Exception {
+        final String inputString =
+                "tournamentName, " + tournamentName1 + "\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,      1000\n";
+
+        ratingManager.adjustRatingByCsv(inputString, true);
+        ratingManager.adjustRatingByCsv(inputString, true);
+    }
 
     @Test
     public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {

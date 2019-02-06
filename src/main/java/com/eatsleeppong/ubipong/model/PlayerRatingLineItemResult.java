@@ -16,4 +16,12 @@ public class PlayerRatingLineItemResult {
 
     private Boolean processed;
     private Integer rejectReason;
+
+    public boolean isProcessed() {
+        if (processed == null) {
+            return false;
+        } else {
+            return processed;
+        }
+    }
 }

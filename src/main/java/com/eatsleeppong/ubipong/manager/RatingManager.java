@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.manager;
 
+import com.eatsleeppong.ubipong.controller.DuplicateTournamentException;
 import com.eatsleeppong.ubipong.controller.RatingInputFormatException;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.Tournament;
@@ -99,8 +100,53 @@ public class RatingManager {
         return Optional.of(playerRepository.save(newUser));
     }
 
-    public PlayerRatingLineItemResult verifyRatingByCsv(String csv) throws IOException {
-        return null;
+    public RatingAdjustmentResponse verifyRatingByCsv(String csv)
+            throws IOException, RatingInputFormatException, DuplicateTournamentException {
+
+        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
+        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
+        final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
+        final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
+
+        final String tournamentName = ratingAdjustmentRequest.getTournamentName();
+
+        if (getTournament(tournamentName).isPresent()) {
+            throw new DuplicateTournamentException(MessageFormat.format("Tournament '{0}' has already been recorded",
+                tournamentName));
+        }
+
+        result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+        result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
+
+        for (PlayerRatingLineItem playerRating : playerRatingList) {
+            final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
+            playerRatingResult.setOriginalRequest(playerRating);
+
+            final String playerUserName = playerRating.getPlayerUserName();
+            final Optional<Player> player = getPlayer(playerUserName);
+            if (!player.isPresent()) {
+                playerRatingResult.setProcessed(false);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER);
+                playerRatingResultList.add(playerRatingResult);
+                continue;
+            }
+
+            try {
+                final Integer rating = Integer.parseInt(playerRating.getRating());
+                if (rating < 0) {
+                    playerRatingResult.setProcessed(false);
+                    playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
+                    playerRatingResultList.add(playerRatingResult);
+                }
+            } catch (Exception ex) {
+                playerRatingResult.setProcessed(false);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
+                playerRatingResultList.add(playerRatingResult);
+            }
+        }
+
+        result.setPlayerRatingResultList(playerRatingResultList);
+        return result;
     }
 
     /**
@@ -193,15 +239,22 @@ public class RatingManager {
     private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
             final String csv,
             final Function<String, Optional<Player>> playerFinder)
-            throws IOException, RatingInputFormatException {
+            throws IOException, RatingInputFormatException, DuplicateTournamentException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
         final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
 
+        final String tournamentName = ratingAdjustmentRequest.getTournamentName();
+
+        if (getTournament(tournamentName).isPresent()) {
+            throw new DuplicateTournamentException(MessageFormat.format("Tournament '{0}' has already been recorded",
+                    tournamentName));
+        }
+
         Tournament tournament = new Tournament();
-        tournament.setName(ratingAdjustmentRequest.getTournamentName());
+        tournament.setName(tournamentName);
         tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
         tournamentRepository.save(tournament);
 
@@ -250,11 +303,11 @@ public class RatingManager {
     }
 
     public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer)
-            throws IOException, RatingInputFormatException {
+            throws IOException, RatingInputFormatException, DuplicateTournamentException {
         if (autoAddPlayer) {
             return adjustRatingByCsvWithPlayerFinder(csv, this::getOrCreatePlayer);
         } else {
-            return adjustRatingByCsvWithPlayerFinder(csv, playerRepository::findByUserName);
+            return adjustRatingByCsvWithPlayerFinder(csv, this::getPlayer);
         }
     }
 
