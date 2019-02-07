@@ -4,6 +4,8 @@ import lombok.Data;
 
 @Data
 public class TournamentResultLineItem {
-    private Integer winner;
-    private Integer loser;
+    private String winner;
+    private String loser;
+
+    private String resultString;
 }

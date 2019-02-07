@@ -381,13 +381,17 @@ public class TestRatingManager {
     @Ignore("finish later")
     public void generatePlayerRatingLineItem() {
         TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
-        tournamentResultLineItem.setWinner(spongeBobId);
-        tournamentResultLineItem.setLoser(patrickId);
+        tournamentResultLineItem.setWinner(spongeBobUserName);
+        tournamentResultLineItem.setLoser(patrickUserName);
 
         final List<PlayerRatingLineItem> playerRatingLineItemList =
                 ratingManager.generatePlayerRatingLineItem(tournamentResultLineItem);
 
-        playerRatingLineItemList.get(0).getPlayerUserName();
+        final PlayerRatingLineItem winnerItem = playerRatingLineItemList.get(0);
+        final PlayerRatingLineItem loserItem = playerRatingLineItemList.get(1);
+
+        assertThat(winnerItem.getPlayerUserName(), is(spongeBobUserName));
+        assertThat(loserItem.getPlayerUserName(), is(patrickUserName));
     }
 
     @Test
