@@ -13,11 +13,7 @@ import name.subroutine.etable.CsvTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +25,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 @Service
 public class RatingManager {
@@ -63,9 +58,6 @@ public class RatingManager {
                 PageRequest.of(0, size, Sort.Direction.DESC, "adjustmentDate"));
 
         return ratingHistory.getContent();
-    }
-    public void processMatchResult(MatchResult matchResult) {
-        return;
     }
 
     public PlayerRatingAdjustment adjustRating(PlayerRatingAdjustment playerRatingAdjustment) {
@@ -337,5 +329,13 @@ public class RatingManager {
         newTournament.setName(name);
 
         return Optional.of(tournamentRepository.save(newTournament));
+    }
+
+    public List<PlayerRatingLineItem> generatePlayerRatingLineItem(TournamentResultLineItem tournamentResultLineItem) {
+        return null;
+    }
+
+    public RatingAdjustmentRequest generateRatingAdjustmentRequest(TournamentResultRequest tournamentResultRequest) {
+        return null;
     }
 }

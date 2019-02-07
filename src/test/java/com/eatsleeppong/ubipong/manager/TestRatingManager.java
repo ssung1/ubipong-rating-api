@@ -4,8 +4,10 @@ import com.eatsleeppong.ubipong.controller.DuplicateTournamentException;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
+import com.eatsleeppong.ubipong.model.PlayerRatingLineItem;
 import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
+import com.eatsleeppong.ubipong.model.TournamentResultLineItem;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -364,7 +366,7 @@ public class TestRatingManager {
         // when adding a second tournament, the initial rating is taken from the final rating of first tournament
         ratingManager.adjustRatingByCsv(tournament2, false);
 
-        List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
+        final List<PlayerRatingAdjustment> ratingHistory = ratingManager.getRatingHistory(spongeBobId, 2);
 
         assertThat(ratingHistory.get(0).getFinalRating(), is(1100));
         assertThat(ratingHistory.get(0).getFirstPassRating(), is(1000));
@@ -373,5 +375,23 @@ public class TestRatingManager {
         assertThat(ratingHistory.get(1).getFinalRating(), is(1000));
         assertThat(ratingHistory.get(1).getFirstPassRating(), is(0));
         assertThat(ratingHistory.get(1).getInitialRating(), is(0));
+    }
+
+    @Test
+    @Ignore("finish later")
+    public void generatePlayerRatingLineItem() {
+        TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
+        tournamentResultLineItem.setWinner(spongeBobId);
+        tournamentResultLineItem.setLoser(patrickId);
+
+        final List<PlayerRatingLineItem> playerRatingLineItemList =
+                ratingManager.generatePlayerRatingLineItem(tournamentResultLineItem);
+
+        playerRatingLineItemList.get(0).getPlayerUserName();
+    }
+
+    @Test
+    @Ignore("finish later")
+    public void generateRatingAdjustmentRequest() {
     }
 }
