@@ -47,4 +47,5 @@ have lost the results and only want to update the player ratings.  The format of
     line 5                {player2_username}   , {player2_rating}
     line 6                {player3_username}   , {player3_rating}
     ...
+Internally, the text/csv file is converted to a `RatingAdjustmentRequest`.
 

@@ -332,7 +332,15 @@ public class RatingManager {
     }
 
     public List<PlayerRatingLineItem> generatePlayerRatingLineItem(TournamentResultLineItem tournamentResultLineItem) {
-        return null;
+        PlayerRatingLineItem winnerItem = new PlayerRatingLineItem();
+        winnerItem.setPlayerUserName(tournamentResultLineItem.getWinner());
+        winnerItem.setRating("dunno");
+
+        PlayerRatingLineItem loserItem = new PlayerRatingLineItem();
+        loserItem.setPlayerUserName(tournamentResultLineItem.getLoser());
+        loserItem.setRating("dunno");
+
+        return Arrays.asList(winnerItem, loserItem);
     }
 
     public RatingAdjustmentRequest generateRatingAdjustmentRequest(TournamentResultRequest tournamentResultRequest) {

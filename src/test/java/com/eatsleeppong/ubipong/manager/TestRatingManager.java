@@ -53,7 +53,7 @@ public class TestRatingManager {
     private Integer usOpenId = 100;
     private Integer atlantaOpenId = 101;
 
-    private Player spongebob;
+    private Player spongeBob;
     private Player patrick;
     private Player squidward;
 
@@ -65,8 +65,8 @@ public class TestRatingManager {
 
     @Before
     public void setup() throws ParseException {
-        spongebob = new Player();
-        spongebob.setUserName(spongeBobUserName);
+        spongeBob = new Player();
+        spongeBob.setUserName(spongeBobUserName);
 
         patrick = new Player();
         patrick.setUserName(patrickUserName);
@@ -110,7 +110,7 @@ public class TestRatingManager {
         assertThat(saved.getPlayerRatingAdjustmentId(), notNullValue());
 
         final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
-            () -> new AssertionError("Cannot final rating")
+            () -> new AssertionError("Cannot get final rating")
         );
 
         assertThat(finalRating.getFinalRating(), is(expectedFinalRating));
@@ -118,7 +118,7 @@ public class TestRatingManager {
 
     @Test
     public void addPlayer() {
-        final Player bob = ratingManager.addPlayer(spongebob);
+        final Player bob = ratingManager.addPlayer(spongeBob);
 
         assertThat(bob.getPlayerId(), notNullValue());
     }
@@ -140,7 +140,7 @@ public class TestRatingManager {
 
     @Test
     public void getPlayerByUserName() {
-        ratingManager.addPlayer(spongebob);
+        ratingManager.addPlayer(spongeBob);
 
         final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
 
@@ -151,7 +151,7 @@ public class TestRatingManager {
 
     @Test
     public void getPlayerById() {
-        final Player spongebob1 = ratingManager.addPlayer(spongebob);
+        final Player spongebob1 = ratingManager.addPlayer(spongeBob);
 
         final Optional<Player> spongebob2 = ratingManager.getPlayerById(spongebob1.getPlayerId());
 
@@ -167,7 +167,7 @@ public class TestRatingManager {
 
     @Test
     public void adjustPlayerRatingByCsv() throws Exception {
-        final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
+        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
         final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
 
         final String inputString =
@@ -204,7 +204,7 @@ public class TestRatingManager {
 
     @Test
     public void adjustPlayerRatingByCsvInvalidRating() throws Exception {
-        ratingManager.addPlayer(spongebob).getPlayerId();
+        ratingManager.addPlayer(spongeBob).getPlayerId();
 
         final String inputString =
                 "tournamentName, test-tournament-1\n" +
@@ -348,7 +348,7 @@ public class TestRatingManager {
 
     @Test
     public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {
-        final Integer spongeBobId = ratingManager.addPlayer(spongebob).getPlayerId();
+        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
 
         final String tournament1 =
                 "tournamentName, test-tournament-1\n" +
@@ -378,9 +378,36 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore("finish later")
-    public void generatePlayerRatingLineItem() {
-        TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
+    public void generatePlayerRatingLineItem() throws Exception {
+        // set up current rating
+        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
+        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+
+        final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
+        spongeBobRating.setPlayerId(spongeBobId);
+        spongeBobRating.setAdjustmentDate(df.parse(tournamentDate1));
+        spongeBobRating.setInitialRating(1000);
+        spongeBobRating.setFirstPassRating(1000);
+        spongeBobRating.setFinalRating(1000);
+
+        final PlayerRatingAdjustment patrickRating = new PlayerRatingAdjustment();
+        patrickRating.setPlayerId(patrickId);
+        patrickRating.setAdjustmentDate(df.parse(tournamentDate1));
+        patrickRating.setInitialRating(1100);
+        patrickRating.setFirstPassRating(1100);
+        patrickRating.setFinalRating(1100);
+
+        ratingManager.adjustRating(spongeBobRating);
+        ratingManager.adjustRating(patrickRating);
+
+        // make sure we set up rating correctly
+        final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
+            () -> new AssertionError("Cannot get final rating")
+        );
+
+        assertThat(finalRating.getFinalRating(), is(456));
+
+        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
         tournamentResultLineItem.setWinner(spongeBobUserName);
         tournamentResultLineItem.setLoser(patrickUserName);
 
