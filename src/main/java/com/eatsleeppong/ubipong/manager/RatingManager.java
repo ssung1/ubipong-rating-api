@@ -33,15 +33,18 @@ public class RatingManager {
     private PlayerRepository playerRepository;
     private PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository;
     private TournamentRepository tournamentRepository;
+    private RatingCalculator ratingCalculator;
 
     public RatingManager(
             PlayerRepository playerRepository,
             PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository,
-            TournamentRepository tournamentRepository
+            TournamentRepository tournamentRepository,
+            RatingCalculator ratingCalculator
     ) {
         this.playerRepository = playerRepository;
         this.playerRatingAdjustmentRepository = playerRatingAdjustmentRepository;
         this.tournamentRepository = tournamentRepository;
+        this.ratingCalculator = ratingCalculator;
     }
 
     public Optional<PlayerRatingAdjustment> getRating(Integer playerId) {
@@ -332,13 +335,29 @@ public class RatingManager {
     }
 
     public List<PlayerRatingLineItem> generatePlayerRatingLineItem(TournamentResultLineItem tournamentResultLineItem) {
+        final String winnerUserName = tournamentResultLineItem.getWinner();
+        final String loserUserName = tournamentResultLineItem.getLoser();
+
+        final Optional<Player> winner = getPlayer(winnerUserName);
+        final Optional<Player> loser = getPlayer(loserUserName);
+
+        final Integer winnerRating = winner
+                .flatMap(p -> getRating(p.getPlayerId()))
+                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+        final Integer loserRating = loser
+                .flatMap(p -> getRating(p.getPlayerId()))
+                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+
+        final Integer newWinnerRating = ratingCalculator.calculateWinnerDelta(winnerRating, loserRating) + winnerRating;
+        final Integer newLoserRating = ratingCalculator.calculateLoserDelta(winnerRating, loserRating) + loserRating;
+
         PlayerRatingLineItem winnerItem = new PlayerRatingLineItem();
         winnerItem.setPlayerUserName(tournamentResultLineItem.getWinner());
-        winnerItem.setRating("dunno");
+        winnerItem.setRating(newWinnerRating.toString());
 
         PlayerRatingLineItem loserItem = new PlayerRatingLineItem();
         loserItem.setPlayerUserName(tournamentResultLineItem.getLoser());
-        loserItem.setRating("dunno");
+        loserItem.setRating(newLoserRating.toString());
 
         return Arrays.asList(winnerItem, loserItem);
     }

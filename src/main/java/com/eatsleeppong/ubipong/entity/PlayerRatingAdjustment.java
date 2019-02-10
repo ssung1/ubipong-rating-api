@@ -5,6 +5,10 @@ import lombok.Data;
 import javax.persistence.*;
 import java.util.Date;
 
+/**
+ * After each tournament, the player will get one of these records as the overall rating change.  It includes the
+ * rating before and after the tournament.
+ */
 @Data
 @Entity
 public class PlayerRatingAdjustment {

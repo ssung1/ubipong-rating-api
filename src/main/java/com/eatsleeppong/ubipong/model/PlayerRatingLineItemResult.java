@@ -6,6 +6,10 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * After a PlayerRatingLineItem is processed, we return this result, which includes the original PlayerRatingLineItem
+ * plus any error codes if the request could not be processed.
+ */
 @Data
 public class PlayerRatingLineItemResult {
     public static Integer REJECT_REASON_INVALID_PLAYER = 400;

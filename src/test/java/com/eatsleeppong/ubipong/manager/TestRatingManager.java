@@ -75,6 +75,43 @@ public class TestRatingManager {
         squidward.setUserName(squidwardUserName);
     }
 
+    private void initializeSpongeBobAndPatrick(final Integer spongeBobFinalRating, final Integer patrickFinalRating)
+            throws ParseException {
+        // set up current rating
+        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
+        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+
+        final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
+        spongeBobRating.setPlayerId(spongeBobId);
+        spongeBobRating.setAdjustmentDate(df.parse(tournamentDate1));
+        spongeBobRating.setInitialRating(spongeBobFinalRating);
+        spongeBobRating.setFirstPassRating(spongeBobFinalRating);
+        spongeBobRating.setFinalRating(spongeBobFinalRating);
+
+        final PlayerRatingAdjustment patrickRating = new PlayerRatingAdjustment();
+        patrickRating.setPlayerId(patrickId);
+        patrickRating.setAdjustmentDate(df.parse(tournamentDate1));
+        patrickRating.setInitialRating(patrickFinalRating);
+        patrickRating.setFirstPassRating(patrickFinalRating);
+        patrickRating.setFinalRating(patrickFinalRating);
+
+        assertThat(ratingManager.adjustRating(spongeBobRating), notNullValue());
+        assertThat(ratingManager.adjustRating(patrickRating), notNullValue());
+
+        // make sure we set up rating correctly
+        final PlayerRatingAdjustment spongeBobSavedRating = ratingManager.getRating(spongeBobId).orElseThrow(
+            () -> new AssertionError("Cannot get final rating")
+        );
+
+        assertThat(spongeBobSavedRating.getFinalRating(), is(spongeBobFinalRating));
+
+        final PlayerRatingAdjustment patrickSavedRating = ratingManager.getRating(patrickId).orElseThrow(
+            () -> new AssertionError("Cannot get final rating")
+        );
+
+        assertThat(patrickSavedRating.getFinalRating(), is(patrickFinalRating));
+    }
+
     @Test
     public void canary() {
 
@@ -96,23 +133,12 @@ public class TestRatingManager {
     public void getPlayerRating() throws Exception {
         final Integer expectedFinalRating = 1200;
 
-        final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
+        initializeSpongeBobAndPatrick(expectedFinalRating, expectedFinalRating);
 
-        playerRatingAdjustment.setPlayerId(spongeBobId);
-        playerRatingAdjustment.setAdjustmentDate(df.parse(tournamentDate1));
-        playerRatingAdjustment.setTournamentId(usOpenId);
-        playerRatingAdjustment.setInitialRating(1000);
-        playerRatingAdjustment.setFirstPassRating(1100);
-        playerRatingAdjustment.setFinalRating(expectedFinalRating);
-
-        final PlayerRatingAdjustment saved = ratingManager.adjustRating(playerRatingAdjustment);
-
-        assertThat(saved.getPlayerRatingAdjustmentId(), notNullValue());
-
-        final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
+        final PlayerRatingAdjustment finalRating = ratingManager.getPlayer(spongeBobUserName)
+                .flatMap(p -> ratingManager.getRating(p.getPlayerId())).orElseThrow(
             () -> new AssertionError("Cannot get final rating")
         );
-
         assertThat(finalRating.getFinalRating(), is(expectedFinalRating));
     }
 
@@ -379,33 +405,10 @@ public class TestRatingManager {
 
     @Test
     public void generatePlayerRatingLineItem() throws Exception {
-        // set up current rating
-        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
-        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+        final Integer spongeBobFinalRating = 1000;
+        final Integer patrickFinalRating = 1100;
 
-        final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
-        spongeBobRating.setPlayerId(spongeBobId);
-        spongeBobRating.setAdjustmentDate(df.parse(tournamentDate1));
-        spongeBobRating.setInitialRating(1000);
-        spongeBobRating.setFirstPassRating(1000);
-        spongeBobRating.setFinalRating(1000);
-
-        final PlayerRatingAdjustment patrickRating = new PlayerRatingAdjustment();
-        patrickRating.setPlayerId(patrickId);
-        patrickRating.setAdjustmentDate(df.parse(tournamentDate1));
-        patrickRating.setInitialRating(1100);
-        patrickRating.setFirstPassRating(1100);
-        patrickRating.setFinalRating(1100);
-
-        ratingManager.adjustRating(spongeBobRating);
-        ratingManager.adjustRating(patrickRating);
-
-        // make sure we set up rating correctly
-        final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobId).orElseThrow(
-            () -> new AssertionError("Cannot get final rating")
-        );
-
-        assertThat(finalRating.getFinalRating(), is(456));
+        initializeSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
         final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
         tournamentResultLineItem.setWinner(spongeBobUserName);
@@ -418,7 +421,9 @@ public class TestRatingManager {
         final PlayerRatingLineItem loserItem = playerRatingLineItemList.get(1);
 
         assertThat(winnerItem.getPlayerUserName(), is(spongeBobUserName));
+        assertThat(winnerItem.getRating(), is("1020"));
         assertThat(loserItem.getPlayerUserName(), is(patrickUserName));
+        assertThat(loserItem.getRating(), is("1080"));
     }
 
     @Test
