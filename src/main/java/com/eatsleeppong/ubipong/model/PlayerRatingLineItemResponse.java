@@ -11,7 +11,7 @@ import java.util.List;
  * plus any error codes if the request could not be processed.
  */
 @Data
-public class PlayerRatingLineItemResult {
+public class PlayerRatingLineItemResponse {
     public static Integer REJECT_REASON_INVALID_PLAYER = 400;
     public static Integer REJECT_REASON_INVALID_RATING = 401;
 

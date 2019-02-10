@@ -106,7 +106,8 @@ public class RatingManager {
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
+        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
+                new ArrayList<>(playerRatingList.size());
 
         final String tournamentName = ratingAdjustmentRequest.getTournamentName();
 
@@ -119,15 +120,15 @@ public class RatingManager {
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
-            final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
+            final PlayerRatingLineItemResponse playerRatingResult = new PlayerRatingLineItemResponse();
             playerRatingResult.setOriginalRequest(playerRating);
 
             final String playerUserName = playerRating.getPlayerUserName();
             final Optional<Player> player = getPlayer(playerUserName);
             if (!player.isPresent()) {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER);
-                playerRatingResultList.add(playerRatingResult);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER);
+                playerRatingLineItemResponseList.add(playerRatingResult);
                 continue;
             }
 
@@ -135,17 +136,17 @@ public class RatingManager {
                 final Integer rating = Integer.parseInt(playerRating.getRating());
                 if (rating < 0) {
                     playerRatingResult.setProcessed(false);
-                    playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
-                    playerRatingResultList.add(playerRatingResult);
+                    playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
+                    playerRatingLineItemResponseList.add(playerRatingResult);
                 }
             } catch (Exception ex) {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
-                playerRatingResultList.add(playerRatingResult);
+                playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
+                playerRatingLineItemResponseList.add(playerRatingResult);
             }
         }
 
-        result.setPlayerRatingResultList(playerRatingResultList);
+        result.setPlayerRatingResultList(playerRatingLineItemResponseList);
         return result;
     }
 
@@ -245,7 +246,8 @@ public class RatingManager {
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<PlayerRatingLineItemResult> playerRatingResultList = new ArrayList<>(playerRatingList.size());
+        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
+                new ArrayList<>(playerRatingList.size());
 
         final String tournamentName = ratingAdjustmentRequest.getTournamentName();
 
@@ -263,9 +265,9 @@ public class RatingManager {
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
-            final PlayerRatingLineItemResult playerRatingResult = new PlayerRatingLineItemResult();
-            playerRatingResultList.add(playerRatingResult);
-            playerRatingResult.setOriginalRequest(playerRating);
+            final PlayerRatingLineItemResponse playerRatingLineItemResponse = new PlayerRatingLineItemResponse();
+            playerRatingLineItemResponseList.add(playerRatingLineItemResponse);
+            playerRatingLineItemResponse.setOriginalRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
@@ -274,8 +276,8 @@ public class RatingManager {
             if (player.isPresent()) {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
             } else {
-                playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_PLAYER);
+                playerRatingLineItemResponse.setProcessed(false);
+                playerRatingLineItemResponse.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER);
                 continue;
             }
 
@@ -289,17 +291,17 @@ public class RatingManager {
                 playerRatingAdjustment.setFinalRating(rating);
                 playerRatingAdjustment.setAdjustmentDate(ratingAdjustmentRequest.getTournamentDate());
             } catch (Exception ex) {
-                playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResult.REJECT_REASON_INVALID_RATING);
+                playerRatingLineItemResponse.setProcessed(false);
+                playerRatingLineItemResponse.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
                 continue;
             }
 
             playerRatingAdjustmentRepository.save(playerRatingAdjustment);
-            playerRatingResult.setAdjustmentResult(playerRatingAdjustment);
-            playerRatingResult.setProcessed(true);
+            playerRatingLineItemResponse.setAdjustmentResult(playerRatingAdjustment);
+            playerRatingLineItemResponse.setProcessed(true);
         }
 
-        result.setPlayerRatingResultList(playerRatingResultList);
+        result.setPlayerRatingResultList(playerRatingLineItemResponseList);
         return result;
     }
 
