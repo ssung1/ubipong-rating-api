@@ -80,15 +80,15 @@ public class RatingManager {
      * @param search can be ID, username, or {firstname lastname}
      * @return
      */
-    public Optional<Player> getPlayer(String search) {
+    public Optional<Player> getPlayer(final String search) {
         return playerRepository.findByUserName(search);
     }
 
-    public Integer getPlayerId(String search) {
+    public Integer getPlayerId(final String search) {
         return getPlayer(search).map(Player::getPlayerId).orElse(null);
     }
 
-    public Optional<Player> getOrCreatePlayer(String search) {
+    public Optional<Player> getOrCreatePlayer(final String search) {
         final Optional<Player> existing = getPlayer(search);
         if (existing.isPresent()) {
             return existing;
@@ -100,7 +100,7 @@ public class RatingManager {
         return Optional.of(playerRepository.save(newUser));
     }
 
-    public RatingAdjustmentResponse verifyRatingByCsv(String csv)
+    public RatingAdjustmentResponse verifyRatingByCsv(final String csv)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
@@ -157,7 +157,8 @@ public class RatingManager {
      * @param contentName what we are expecting in that line
      * @param action what we want to do with the content
      */
-    private void processHeaderLine(final String line, final int lineNumber, final String contentName, Consumer<String> action)
+    private void processHeaderLine(final String line, final int lineNumber, final String contentName,
+            final Consumer<String> action)
             throws RatingInputFormatException {
         if (line == null) {
             throw new RatingInputFormatException(MessageFormat.format("Missing line {0}", lineNumber));
@@ -302,7 +303,7 @@ public class RatingManager {
         return result;
     }
 
-    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, boolean autoAddPlayer)
+    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, final boolean autoAddPlayer)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
         if (autoAddPlayer) {
             return adjustRatingByCsvWithPlayerFinder(csv, this::getOrCreatePlayer);
@@ -311,11 +312,11 @@ public class RatingManager {
         }
     }
 
-    public Tournament addTournament(Tournament tournament) {
+    public Tournament addTournament(final Tournament tournament) {
         return tournamentRepository.save(tournament);
     }
 
-    public Optional<Tournament> getTournamentById(Integer id) {
+    public Optional<Tournament> getTournamentById(final Integer id) {
         return tournamentRepository.findById(id);
     }
 
@@ -323,11 +324,11 @@ public class RatingManager {
      * @param search can be ID, username, or {firstname lastname}
      * @return
      */
-    public Optional<Tournament> getTournament(String search) {
+    public Optional<Tournament> getTournament(final String search) {
         return tournamentRepository.findByName(search);
     }
 
-    public Optional<Tournament> getOrCreateTournament(String name) {
+    public Optional<Tournament> getOrCreateTournament(final String name) {
         final Optional<Tournament> existing = getTournament(name);
         if (existing.isPresent()) {
             return existing;
@@ -348,8 +349,8 @@ public class RatingManager {
      * @return
      */
     public MatchResult generateMatchResult(
-            Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
-            TournamentResultLineItem tournamentResultLineItem) {
+            final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
+            final TournamentResultLineItem tournamentResultLineItem) {
         final String winnerUserName = tournamentResultLineItem.getWinner();
         final String loserUserName = tournamentResultLineItem.getLoser();
 
@@ -377,7 +378,32 @@ public class RatingManager {
         return matchResult;
     }
 
-    public PlayerRatingAdjustment generatePlayerRatingAdjustment(MatchResult matchResult) {
-        return null;
+    public Map<Integer, PlayerRatingAdjustment> applyMatchResultList(
+            final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
+            final List<MatchResult> matchResultList) {
+        final Map<Integer, PlayerRatingAdjustment> result = new HashMap<>();
+
+        // make a copy of the PlayerRatingAdjustment map
+        playerRatingAdjustmentMap.values().forEach((v) -> {
+            PlayerRatingAdjustment newRating;
+            try {
+                newRating = (PlayerRatingAdjustment)v.clone();
+            } catch (CloneNotSupportedException ex) {
+                newRating = new PlayerRatingAdjustment();
+            }
+            newRating.setFirstPassRating(v.getInitialRating());
+            newRating.setFinalRating(v.getInitialRating());
+            result.put(v.getPlayerId(), newRating);
+        });
+
+        // now apply the new ratings
+        matchResultList.forEach(m -> {
+            final PlayerRatingAdjustment winnerRating = result.get(m.getWinnerId());
+            winnerRating.setFinalRating(winnerRating.getFinalRating() + m.getWinnerRatingDelta());
+            final PlayerRatingAdjustment loserRating = result.get(m.getLoserId());
+            loserRating.setFinalRating(loserRating.getFinalRating() - m.getWinnerRatingDelta());
+        });
+
+        return result;
     }
 }

@@ -11,7 +11,7 @@ import java.util.Date;
  */
 @Data
 @Entity
-public class PlayerRatingAdjustment {
+public class PlayerRatingAdjustment implements Cloneable {
     // example of table generator
     // @TableGenerator(
     //     name = "playerRatingAdjustmentGen",
@@ -43,4 +43,8 @@ public class PlayerRatingAdjustment {
 
     @Column(nullable = false)
     private Integer finalRating;
+
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }
