@@ -1,6 +1,7 @@
 package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.controller.DuplicateTournamentException;
+import com.eatsleeppong.ubipong.entity.MatchResult;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
@@ -8,6 +9,7 @@ import com.eatsleeppong.ubipong.model.PlayerRatingLineItem;
 import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResult;
 import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.model.TournamentResultLineItem;
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -23,9 +25,7 @@ import javax.transaction.Transactional;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
@@ -404,30 +404,58 @@ public class TestRatingManager {
     }
 
     @Test
-    public void generatePlayerRatingLineItem() throws Exception {
-        final Integer spongeBobFinalRating = 1000;
-        final Integer patrickFinalRating = 1100;
+    public void generateMatchResult() throws Exception {
+        final Integer spongeBobInitialRating = 1000;
+        final Integer patrickInitialRating = 1100;
 
-        initializeSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
+        final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
+        spongeBobRating.setPlayerId(spongeBobId);
+        spongeBobRating.setInitialRating(spongeBobInitialRating);
+
+        final PlayerRatingAdjustment patrickRating = new PlayerRatingAdjustment();
+        patrickRating.setPlayerId(patrickId);
+        patrickRating.setInitialRating(patrickInitialRating);
+
+//        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
+//                new HashMap<String, PlayerRatingAdjustment>() {{
+//                    put(spongeBobUserName, spongeBobRating);
+//                    put(patrickUserName, patrickRating);
+//        }};
+
+        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap = new HashMap<>();
+        playerRatingAdjustmentMap.put(spongeBobUserName, spongeBobRating);
+        playerRatingAdjustmentMap.put(patrickUserName, patrickRating);
 
         final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
         tournamentResultLineItem.setWinner(spongeBobUserName);
         tournamentResultLineItem.setLoser(patrickUserName);
 
-        final List<PlayerRatingLineItem> playerRatingLineItemList =
-                ratingManager.generatePlayerRatingLineItem(tournamentResultLineItem);
-
-        final PlayerRatingLineItem winnerItem = playerRatingLineItemList.get(0);
-        final PlayerRatingLineItem loserItem = playerRatingLineItemList.get(1);
-
-        assertThat(winnerItem.getPlayerUserName(), is(spongeBobUserName));
-        assertThat(winnerItem.getRating(), is("1020"));
-        assertThat(loserItem.getPlayerUserName(), is(patrickUserName));
-        assertThat(loserItem.getRating(), is("1080"));
+//        final Integer spongeBobId = ratingManager.getPlayerId(spongeBobUserName);
+//        final Integer patrickId = ratingManager.getPlayerId(patrickUserName);
+//
+//        final List<PlayerRatingLineItem> playerRatingLineItemList =
+//                ratingManager.generatePlayerRatingLineItem(tournamentResultLineItem);
+//
+//        final PlayerRatingLineItem winnerItem = playerRatingLineItemList.get(0);
+//        final PlayerRatingLineItem loserItem = playerRatingLineItemList.get(1);
+//
+//        assertThat(winnerItem.getPlayerUserName(), is(spongeBobUserName));
+//        assertThat(winnerItem.getRating(), is("1020"));
+//        assertThat(loserItem.getPlayerUserName(), is(patrickUserName));
+//        assertThat(loserItem.getRating(), is("1080"));
+        final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
+                tournamentResultLineItem);
+        assertThat(matchResult.getWinnerId(), is(spongeBobId));
+        assertThat(matchResult.getLoserId(), is(patrickId));
+        assertThat(matchResult.getWinnerRatingDelta(), is(20));
     }
 
     @Test
     @Ignore("finish later")
-    public void generateRatingAdjustmentRequest() {
+    public void generatePlayerRatingAdjustment() {
+        MatchResult matchResult = new MatchResult();
+        matchResult.setWinnerId(spongeBobId);
+        matchResult.setLoserId(patrickId);
+        //matchResult.set
     }
 }

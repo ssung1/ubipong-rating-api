@@ -16,15 +16,7 @@ public class MatchResult {
     private Integer matchResultId;
 
     private Integer tournamentId;
-    private Integer player1Id;
-    private Integer player2Id;
-    private Boolean winForPlayer1;
-
-    public boolean isWinForPlayer1() {
-        if (winForPlayer1 != null) {
-            return winForPlayer1;
-        } else {
-            return false;
-        }
-    }
+    private Integer winnerId;
+    private Integer loserId;
+    private Integer winnerRatingDelta;
 }

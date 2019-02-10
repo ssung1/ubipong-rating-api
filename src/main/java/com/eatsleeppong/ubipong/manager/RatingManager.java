@@ -2,6 +2,7 @@ package com.eatsleeppong.ubipong.manager;
 
 import com.eatsleeppong.ubipong.controller.DuplicateTournamentException;
 import com.eatsleeppong.ubipong.controller.RatingInputFormatException;
+import com.eatsleeppong.ubipong.entity.MatchResult;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.Tournament;
 import com.eatsleeppong.ubipong.model.*;
@@ -81,6 +82,10 @@ public class RatingManager {
      */
     public Optional<Player> getPlayer(String search) {
         return playerRepository.findByUserName(search);
+    }
+
+    public Integer getPlayerId(String search) {
+        return getPlayer(search).map(Player::getPlayerId).orElse(null);
     }
 
     public Optional<Player> getOrCreatePlayer(String search) {
@@ -334,35 +339,45 @@ public class RatingManager {
         return Optional.of(tournamentRepository.save(newTournament));
     }
 
-    public List<PlayerRatingLineItem> generatePlayerRatingLineItem(TournamentResultLineItem tournamentResultLineItem) {
+    /**
+     * Generate a MatchResult object which contains the rating delta.  This requires a map of players and their
+     * initial ratings, in the form of PlayerRatingAdjustment.
+     *
+     * @param playerRatingAdjustmentMap
+     * @param tournamentResultLineItem
+     * @return
+     */
+    public MatchResult generateMatchResult(
+            Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
+            TournamentResultLineItem tournamentResultLineItem) {
         final String winnerUserName = tournamentResultLineItem.getWinner();
         final String loserUserName = tournamentResultLineItem.getLoser();
 
-        final Optional<Player> winner = getPlayer(winnerUserName);
-        final Optional<Player> loser = getPlayer(loserUserName);
+        final PlayerRatingAdjustment winnerRating = playerRatingAdjustmentMap.get(winnerUserName);
+        final PlayerRatingAdjustment loserRating = playerRatingAdjustmentMap.get(loserUserName);
 
-        final Integer winnerRating = winner
-                .flatMap(p -> getRating(p.getPlayerId()))
-                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
-        final Integer loserRating = loser
-                .flatMap(p -> getRating(p.getPlayerId()))
-                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+//        final Optional<Player> winner = getPlayer(winnerUserName);
+//        final Optional<Player> loser = getPlayer(loserUserName);
+//
+//        final Integer winnerRating = winner
+//                .flatMap(p -> getRating(p.getPlayerId()))
+//                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
+//        final Integer loserRating = loser
+//                .flatMap(p -> getRating(p.getPlayerId()))
+//                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
 
-        final Integer newWinnerRating = ratingCalculator.calculateWinnerDelta(winnerRating, loserRating) + winnerRating;
-        final Integer newLoserRating = ratingCalculator.calculateLoserDelta(winnerRating, loserRating) + loserRating;
+        final Integer winnerRatingDelta = ratingCalculator.calculateWinnerDelta(
+                winnerRating.getInitialRating(), loserRating.getInitialRating());
 
-        PlayerRatingLineItem winnerItem = new PlayerRatingLineItem();
-        winnerItem.setPlayerUserName(tournamentResultLineItem.getWinner());
-        winnerItem.setRating(newWinnerRating.toString());
+        MatchResult matchResult = new MatchResult();
+        matchResult.setWinnerId(winnerRating.getPlayerId());
+        matchResult.setLoserId(loserRating.getPlayerId());
+        matchResult.setWinnerRatingDelta(winnerRatingDelta);
 
-        PlayerRatingLineItem loserItem = new PlayerRatingLineItem();
-        loserItem.setPlayerUserName(tournamentResultLineItem.getLoser());
-        loserItem.setRating(newLoserRating.toString());
-
-        return Arrays.asList(winnerItem, loserItem);
+        return matchResult;
     }
 
-    public RatingAdjustmentRequest generateRatingAdjustmentRequest(TournamentResultRequest tournamentResultRequest) {
+    public PlayerRatingAdjustment generatePlayerRatingAdjustment(MatchResult matchResult) {
         return null;
     }
 }
