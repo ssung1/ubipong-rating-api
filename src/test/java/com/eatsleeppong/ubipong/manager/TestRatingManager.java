@@ -221,7 +221,7 @@ public class TestRatingManager {
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, false);
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-                ratingAdjustmentResponse.getPlayerRatingResultList();
+                ratingAdjustmentResponse.getPlayerRatingList();
 
         assertFalse(playerRatingLineItemResponseList.get(0).getProcessed());
         assertThat(playerRatingLineItemResponseList.get(0).getOriginalRequest().getPlayerUserName(), is("inva\"lid"));
@@ -255,7 +255,7 @@ public class TestRatingManager {
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingResultList();
+            ratingAdjustmentResponse.getPlayerRatingList();
         final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
 
         assertFalse(playerRatingResult.getProcessed());
@@ -274,7 +274,7 @@ public class TestRatingManager {
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingResultList();
+            ratingAdjustmentResponse.getPlayerRatingList();
         final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
 
         assertFalse(playerRatingResult.getProcessed());
@@ -293,7 +293,7 @@ public class TestRatingManager {
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, true);
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingResultList();
+            ratingAdjustmentResponse.getPlayerRatingList();
         final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
 
         assertTrue(playerRatingResult.getProcessed());
@@ -322,7 +322,7 @@ public class TestRatingManager {
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
         assertThat(ratingAdjustmentResponse.getTournamentDate(), is(df.parse(tournamentDate1)));
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingResultList();
+            ratingAdjustmentResponse.getPlayerRatingList();
         final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
 
         assertTrue(playerRatingResult.getProcessed());
@@ -366,7 +366,7 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.verifyRatingByCsv(inputString);
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-                ratingAdjustmentResponse.getPlayerRatingResultList();
+                ratingAdjustmentResponse.getPlayerRatingList();
 
         assertThat(playerRatingLineItemResponseList.get(0).getRejectReason(),
                 is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER));
@@ -530,18 +530,16 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, true);
-//        final List<PlayerRatingLineItemResponse> playerRatingResultList =
-//            ratingAdjustmentResponse.getPlayerRatingResultList();
-//        final PlayerRatingLineItemResponse playerRatingResult = playerRatingResultList.get(0);
+//        final List<PlayerRatingLineItemResponse> playerRatingList =
+//            ratingAdjustmentResponse.getPlayerRatingList();
+//        final PlayerRatingLineItemResponse playerRatingResult = playerRatingList.get(0);
 //
 //        assertFalse(playerRatingResult.getProcessed());
 //        assertThat(playerRatingResult.getRejectReason(),
 //            is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER));
 
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
-        assertThat(ratingAdjustmentResponse.getPlayerRatingResultList().get(0).getProcessed(), is(true));
-        assertThat(ratingAdjustmentResponse.getPlayerRatingResultList().get(1).getProcessed(), is(true));
-
-
+        assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(0).getProcessed(), is(true));
+        assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(1).getProcessed(), is(true));
     }
 }

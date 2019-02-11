@@ -146,7 +146,7 @@ public class RatingManager {
             }
         }
 
-        result.setPlayerRatingResultList(playerRatingLineItemResponseList);
+        result.setPlayerRatingList(playerRatingLineItemResponseList);
         return result;
     }
 
@@ -301,7 +301,7 @@ public class RatingManager {
             playerRatingLineItemResponse.setProcessed(true);
         }
 
-        result.setPlayerRatingResultList(playerRatingLineItemResponseList);
+        result.setPlayerRatingList(playerRatingLineItemResponseList);
         return result;
     }
 

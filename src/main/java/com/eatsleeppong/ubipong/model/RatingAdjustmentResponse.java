@@ -15,5 +15,5 @@ public class RatingAdjustmentResponse {
     private String tournamentName;
     private Date tournamentDate;
 
-    private List<PlayerRatingLineItemResponse> playerRatingResultList;
+    private List<PlayerRatingLineItemResponse> playerRatingList;
 }
