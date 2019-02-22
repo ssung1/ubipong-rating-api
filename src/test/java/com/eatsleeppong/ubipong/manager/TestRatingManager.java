@@ -5,9 +5,7 @@ import com.eatsleeppong.ubipong.entity.MatchResult;
 import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
-import com.eatsleeppong.ubipong.model.PlayerRatingLineItemResponse;
-import com.eatsleeppong.ubipong.model.RatingAdjustmentResponse;
-import com.eatsleeppong.ubipong.model.TournamentResultLineItem;
+import com.eatsleeppong.ubipong.model.*;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -124,6 +122,19 @@ public class TestRatingManager {
                     put(spongeBobUserName, spongeBobRating);
                     put(patrickUserName, patrickRating);
         }};
+    }
+
+    private TournamentResultRequest initializeTournamentResultRequestForSpongeBobAndPatrick() {
+        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
+        tournamentResultLineItem.setWinner(spongeBobUserName);
+        tournamentResultLineItem.setLoser(patrickUserName);
+
+        final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
+        tournamentResultRequest.setTournamentResultList(new TournamentResultLineItem[] {
+            tournamentResultLineItem,
+        });
+
+        return tournamentResultRequest;
     }
 
     @Test
@@ -519,6 +530,33 @@ public class TestRatingManager {
     }
 
     @Test
+    public void testGetPlayerSet() {
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+
+        final Set<String> playerSet = ratingManager.getPlayerSet(tournamentResultRequest);
+
+        assertThat(playerSet, containsInAnyOrder(spongeBobUserName, patrickUserName));
+    }
+
+    @Test
+    public void testGetPlayerRatingAdjustmentMap() throws Exception {
+        final int spongeBobRating = 1000;
+        final int patrickRating = 1100;
+
+        initializeSpongeBobAndPatrick(spongeBobRating, patrickRating);
+
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+
+        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
+                ratingManager.getPlayerRatingAdjustmentMap(tournamentResultRequest);
+
+        assertThat(playerRatingAdjustmentMap.get(spongeBobUserName), notNullValue());
+        assertThat(playerRatingAdjustmentMap.get(patrickUserName), notNullValue());
+    }
+
+    @Test
     @Ignore("finish later")
     public void testInitializeRatingAndSubmitTournamentResult() throws Exception {
         final String inputString =
@@ -541,5 +579,25 @@ public class TestRatingManager {
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(0).getProcessed(), is(true));
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(1).getProcessed(), is(true));
+
+        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
+        tournamentResultLineItem.setWinner(spongeBobUserName);
+        tournamentResultLineItem.setLoser(patrickUserName);
+
+        final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
+        tournamentResultRequest.setTournamentResultList(new TournamentResultLineItem[] {
+                tournamentResultLineItem,
+        });
+        tournamentResultRequest.setTournamentName(tournamentName2);
+        tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
+
+        final TournamentResultResponse tournamentResultResponse =
+                ratingManager.submitTournamentResult(tournamentResultRequest);
+
+        assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
+        assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
+        assertThat(tournamentResultResponse.getPlayerRatingList(), hasSize(2));
+        assertThat(tournamentResultResponse.getPlayerRatingList().get(0).getAdjustmentResult().getInitialRating(), is(1008));
+        assertThat(tournamentResultResponse.getPlayerRatingList().get(1).getAdjustmentResult().getInitialRating(), is(992));
     }
 }

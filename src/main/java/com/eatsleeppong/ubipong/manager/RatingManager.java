@@ -408,4 +408,33 @@ public class RatingManager {
 
         return result;
     }
+
+    public Map<String, PlayerRatingAdjustment> getPlayerRatingAdjustmentMap(
+            final TournamentResultRequest tournamentResultRequest) {
+        final Map<String, PlayerRatingAdjustment> map = new HashMap<>();
+
+        return map;
+    }
+
+    /**
+     * returns a set of players who played in the tournament
+     * @param tournamentResultRequest
+     * @return
+     */
+    public Set<String> getPlayerSet(final TournamentResultRequest tournamentResultRequest) {
+        final Set<String> playerSet = new HashSet<>();
+        for(TournamentResultLineItem result : tournamentResultRequest.getTournamentResultList()) {
+            playerSet.add(result.getWinner());
+            playerSet.add(result.getLoser());
+        }
+        return playerSet;
+    }
+
+    public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest) {
+        final TournamentResultResponse result = new TournamentResultResponse();
+
+        //generateMatchResult()
+
+        return result;
+    }
 }

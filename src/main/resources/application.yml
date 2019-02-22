@@ -9,9 +9,9 @@ spring:
   profiles: test
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: 
-    username: 
-    password: 
+    url:
+    username:
+    password:
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -48,9 +48,9 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     # url specifies a file name, appended with ".mv.db"
-    url:
-    username:
-    password:
+    url: jdbc:mysql://eatsleeppong.com/eatsle12_ubipong
+    username: eatsle12_ubipong
+    password: ubipong
   jpa:
     hibernate:
       ddl-auto: update
