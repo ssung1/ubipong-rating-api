@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.model;
 
+import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import lombok.Data;
 
 import java.util.Date;
@@ -15,5 +16,6 @@ public class TournamentResultResponse {
     private String tournamentName;
     private Date tournamentDate;
 
-    private List<TournamentResultLineItemResponse> playerRatingList;
+    private List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList;
+    private List<PlayerRatingAdjustment> playerRatingList;
 }

@@ -579,13 +579,23 @@ public class TestRatingManager {
         assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
 
-        final List<TournamentResultLineItemResponse> ratingList = tournamentResultResponse.getPlayerRatingList();
+        final List<TournamentResultLineItemResponse> tournamentResultResponseList =
+                tournamentResultResponse.getTournamentResultLineItemResponseList();
+
+        // verify tournamentResultResponseList, which contains original request plus match result
+        assertThat(tournamentResultResponseList, hasSize(1));
+        assertThat(tournamentResultResponseList.get(0).getOriginalTournamentResultLineItem().getWinner(),
+                is(spongeBobUserName));
+        assertThat(tournamentResultResponseList.get(0).getMatchResult().getWinnerRatingDelta(), is(8));
+
+        // verify rating adjustments
+        final List<PlayerRatingAdjustment> ratingList = tournamentResultResponse.getPlayerRatingList();
         assertThat(ratingList, hasSize(2));
-        assertThat(ratingList.get(0).getAdjustmentResult().getInitialRating(), is(1000));
-        assertThat(ratingList.get(0).getAdjustmentResult().getFirstPassRating(), is(1000));
-        assertThat(ratingList.get(0).getAdjustmentResult().getFinalRating(), is(1008));
-        assertThat(ratingList.get(1).getAdjustmentResult().getInitialRating(), is(1000));
-        assertThat(ratingList.get(1).getAdjustmentResult().getFirstPassRating(), is(1000));
-        assertThat(ratingList.get(1).getAdjustmentResult().getFinalRating(), is(992));
+        assertThat(ratingList.get(0).getInitialRating(), is(1000));
+        assertThat(ratingList.get(0).getFirstPassRating(), is(1000));
+        assertThat(ratingList.get(0).getFinalRating(), is(1008));
+        assertThat(ratingList.get(1).getInitialRating(), is(1000));
+        assertThat(ratingList.get(1).getFirstPassRating(), is(1000));
+        assertThat(ratingList.get(1).getFinalRating(), is(992));
     }
 }

@@ -453,21 +453,25 @@ public class RatingManager {
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
                 getPlayerRatingAdjustmentMap(tournamentResultList);
 
-        final List<MatchResult> matchResultList = Arrays.stream(tournamentResultList).map(
-                tournamentResult -> generateMatchResult(playerRatingAdjustmentMap, tournamentResult))
-                .collect(Collectors.toList());
+        final List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList =
+                Arrays.stream(tournamentResultList).map(lineItem -> {
+                    final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
+                    final TournamentResultLineItemResponse tournamentResultLineItemResponse =
+                            new TournamentResultLineItemResponse();
+                    tournamentResultLineItemResponse.setOriginalTournamentResultLineItem(lineItem);
+                    tournamentResultLineItemResponse.setMatchResult(matchResult);
+                    return tournamentResultLineItemResponse;
+                }).collect(Collectors.toList());
+        result.setTournamentResultLineItemResponseList(tournamentResultLineItemResponseList);
+
+        final List<MatchResult> matchResultList = tournamentResultLineItemResponseList.stream()
+                .map(TournamentResultLineItemResponse::getMatchResult).collect(Collectors.toList());
 
         final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
                 applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
 
-        final List<TournamentResultLineItemResponse> responseList =
-                newPlayerRatingAdjustmentMap.values().stream().map(r -> {
-                    final TournamentResultLineItemResponse responseLine = new TournamentResultLineItemResponse();
-                    responseLine.setAdjustmentResult(r);
-                    return responseLine;
-                }).collect(Collectors.toList());
+        result.setPlayerRatingList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
 
-        result.setPlayerRatingList(responseList);
         return result;
     }
 }
