@@ -109,14 +109,18 @@ public class TestRatingManager {
     }
 
     private Map<String, PlayerRatingAdjustment> initializePlayerRatingAdjustmentForSpongeBobAndPatrick(
-            final Integer spongeBobInitialRating, final Integer patrickInitialRating) {
+            final Integer spongeBobFinalRating, final Integer patrickFinalRating) {
         final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
         spongeBobRating.setPlayerId(spongeBobId);
-        spongeBobRating.setInitialRating(spongeBobInitialRating);
+        spongeBobRating.setInitialRating(0);
+        spongeBobRating.setFirstPassRating(0);
+        spongeBobRating.setFinalRating(spongeBobFinalRating);
 
         final PlayerRatingAdjustment patrickRating = new PlayerRatingAdjustment();
         patrickRating.setPlayerId(patrickId);
-        patrickRating.setInitialRating(patrickInitialRating);
+        patrickRating.setInitialRating(0);
+        patrickRating.setFirstPassRating(0);
+        patrickRating.setFinalRating(patrickFinalRating);
 
         return new HashMap<String, PlayerRatingAdjustment>() {{
                     put(spongeBobUserName, spongeBobRating);
@@ -430,29 +434,16 @@ public class TestRatingManager {
 
     @Test
     public void generateMatchResult() {
-        final Integer spongeBobInitialRating = 1000;
-        final Integer patrickInitialRating = 1100;
+        final Integer spongeBobFinalRating = 1000;
+        final Integer patrickFinalRating = 1100;
 
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-                initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobInitialRating, patrickInitialRating);
+                initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
         final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
         tournamentResultLineItem.setWinner(spongeBobUserName);
         tournamentResultLineItem.setLoser(patrickUserName);
 
-//        final Integer spongeBobId = ratingManager.getPlayerId(spongeBobUserName);
-//        final Integer patrickId = ratingManager.getPlayerId(patrickUserName);
-//
-//        final List<PlayerRatingLineItem> playerRatingLineItemList =
-//                ratingManager.generatePlayerRatingLineItem(tournamentResultLineItem);
-//
-//        final PlayerRatingLineItem winnerItem = playerRatingLineItemList.get(0);
-//        final PlayerRatingLineItem loserItem = playerRatingLineItemList.get(1);
-//
-//        assertThat(winnerItem.getPlayerUserName(), is(spongeBobUserName));
-//        assertThat(winnerItem.getRating(), is("1020"));
-//        assertThat(loserItem.getPlayerUserName(), is(patrickUserName));
-//        assertThat(loserItem.getRating(), is("1080"));
         final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
                 tournamentResultLineItem);
         assertThat(matchResult.getWinnerId(), is(spongeBobId));
@@ -462,11 +453,11 @@ public class TestRatingManager {
 
     @Test
     public void applyEmptyMatchResultList() {
-        final Integer spongeBobInitialRating = 1000;
-        final Integer patrickInitialRating = 1100;
+        final Integer spongeBobFinalRating = 1000;
+        final Integer patrickFinalRating = 1100;
 
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-                initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobInitialRating, patrickInitialRating);
+                initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
         final Map<Integer, PlayerRatingAdjustment> newRatingMap =
                 ratingManager.applyMatchResultList(playerRatingAdjustmentMap, Collections.emptyList());
@@ -474,17 +465,17 @@ public class TestRatingManager {
         final PlayerRatingAdjustment spongeBobNewRating = newRatingMap.get(spongeBobId);
         final PlayerRatingAdjustment patrickNewRating = newRatingMap.get(patrickId);
 
-        assertThat(spongeBobNewRating.getFinalRating(), is(spongeBobInitialRating));
-        assertThat(patrickNewRating.getFinalRating(), is(patrickInitialRating));
+        assertThat(spongeBobNewRating.getFinalRating(), is(spongeBobFinalRating));
+        assertThat(patrickNewRating.getFinalRating(), is(patrickFinalRating));
     }
 
     @Test
     public void applyMatchResultListSize1() {
-        final Integer spongeBobInitialRating = 1000;
-        final Integer patrickInitialRating = 1100;
+        final Integer spongeBobFinalRating = 1000;
+        final Integer patrickFinalRating = 1100;
 
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-            initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobInitialRating, patrickInitialRating);
+            initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
         final MatchResult matchResult = new MatchResult();
         matchResult.setWinnerId(spongeBobId);
@@ -503,11 +494,11 @@ public class TestRatingManager {
 
     @Test
     public void applyMatchResultListSize2() {
-        final Integer spongeBobInitialRating = 1000;
-        final Integer patrickInitialRating = 1100;
+        final Integer spongeBobFinalRating = 1000;
+        final Integer patrickFinalRating = 1100;
 
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-            initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobInitialRating, patrickInitialRating);
+            initializePlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
         final MatchResult matchResult1 = new MatchResult();
         matchResult1.setWinnerId(spongeBobId);
@@ -534,7 +525,7 @@ public class TestRatingManager {
         final TournamentResultRequest tournamentResultRequest =
                 initializeTournamentResultRequestForSpongeBobAndPatrick();
 
-        final Set<String> playerSet = ratingManager.getPlayerSet(tournamentResultRequest);
+        final Set<String> playerSet = ratingManager.getPlayerSet(tournamentResultRequest.getTournamentResultList());
 
         assertThat(playerSet, containsInAnyOrder(spongeBobUserName, patrickUserName));
     }
@@ -550,14 +541,18 @@ public class TestRatingManager {
                 initializeTournamentResultRequestForSpongeBobAndPatrick();
 
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-                ratingManager.getPlayerRatingAdjustmentMap(tournamentResultRequest);
+                ratingManager.getPlayerRatingAdjustmentMap(tournamentResultRequest.getTournamentResultList());
 
-        assertThat(playerRatingAdjustmentMap.get(spongeBobUserName), notNullValue());
-        assertThat(playerRatingAdjustmentMap.get(patrickUserName), notNullValue());
+        final PlayerRatingAdjustment spongeBobRatingAdjustment = playerRatingAdjustmentMap.get(spongeBobUserName);
+        final PlayerRatingAdjustment patrickRatingAdjustment = playerRatingAdjustmentMap.get(patrickUserName);
+
+        assertThat(spongeBobRatingAdjustment, notNullValue());
+        assertThat(spongeBobRatingAdjustment.getFinalRating(), is(spongeBobRating));
+        assertThat(patrickRatingAdjustment, notNullValue());
+        assertThat(patrickRatingAdjustment.getFinalRating(), is(patrickRating));
     }
 
     @Test
-    @Ignore("finish later")
     public void testInitializeRatingAndSubmitTournamentResult() throws Exception {
         final String inputString =
                 "tournamentName, " + tournamentName1 + "\n" +
@@ -568,26 +563,13 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, true);
-//        final List<PlayerRatingLineItemResponse> playerRatingList =
-//            ratingAdjustmentResponse.getPlayerRatingList();
-//        final PlayerRatingLineItemResponse playerRatingResult = playerRatingList.get(0);
-//
-//        assertFalse(playerRatingResult.getProcessed());
-//        assertThat(playerRatingResult.getRejectReason(),
-//            is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER));
 
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(0).getProcessed(), is(true));
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(1).getProcessed(), is(true));
 
-        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
-        tournamentResultLineItem.setWinner(spongeBobUserName);
-        tournamentResultLineItem.setLoser(patrickUserName);
-
-        final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
-        tournamentResultRequest.setTournamentResultList(new TournamentResultLineItem[] {
-                tournamentResultLineItem,
-        });
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
         tournamentResultRequest.setTournamentName(tournamentName2);
         tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
 
@@ -596,8 +578,14 @@ public class TestRatingManager {
 
         assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
-        assertThat(tournamentResultResponse.getPlayerRatingList(), hasSize(2));
-        assertThat(tournamentResultResponse.getPlayerRatingList().get(0).getAdjustmentResult().getInitialRating(), is(1008));
-        assertThat(tournamentResultResponse.getPlayerRatingList().get(1).getAdjustmentResult().getInitialRating(), is(992));
+
+        final List<TournamentResultLineItemResponse> ratingList = tournamentResultResponse.getPlayerRatingList();
+        assertThat(ratingList, hasSize(2));
+        assertThat(ratingList.get(0).getAdjustmentResult().getInitialRating(), is(1000));
+        assertThat(ratingList.get(0).getAdjustmentResult().getFirstPassRating(), is(1000));
+        assertThat(ratingList.get(0).getAdjustmentResult().getFinalRating(), is(1008));
+        assertThat(ratingList.get(1).getAdjustmentResult().getInitialRating(), is(1000));
+        assertThat(ratingList.get(1).getAdjustmentResult().getFirstPassRating(), is(1000));
+        assertThat(ratingList.get(1).getAdjustmentResult().getFinalRating(), is(992));
     }
 }

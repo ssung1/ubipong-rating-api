@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class RatingManager {
@@ -238,6 +240,7 @@ public class RatingManager {
         return result;
     }
 
+    @Transactional
     private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
             final String csv,
             final Function<String, Optional<Player>> playerFinder)
@@ -344,7 +347,7 @@ public class RatingManager {
 
     /**
      * Generate a MatchResult object which contains the rating delta.  This requires a map of players and their
-     * initial ratings, in the form of PlayerRatingAdjustment.
+     * final ratings (from their latest adjustment), in the form of PlayerRatingAdjustment.
      *
      * @param playerRatingAdjustmentMap
      * @param tournamentResultLineItem
@@ -359,18 +362,8 @@ public class RatingManager {
         final PlayerRatingAdjustment winnerRating = playerRatingAdjustmentMap.get(winnerUserName);
         final PlayerRatingAdjustment loserRating = playerRatingAdjustmentMap.get(loserUserName);
 
-//        final Optional<Player> winner = getPlayer(winnerUserName);
-//        final Optional<Player> loser = getPlayer(loserUserName);
-//
-//        final Integer winnerRating = winner
-//                .flatMap(p -> getRating(p.getPlayerId()))
-//                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
-//        final Integer loserRating = loser
-//                .flatMap(p -> getRating(p.getPlayerId()))
-//                .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
-
         final Integer winnerRatingDelta = ratingCalculator.calculateWinnerDelta(
-                winnerRating.getInitialRating(), loserRating.getInitialRating());
+                winnerRating.getFinalRating(), loserRating.getFinalRating());
 
         MatchResult matchResult = new MatchResult();
         matchResult.setWinnerId(winnerRating.getPlayerId());
@@ -380,6 +373,11 @@ public class RatingManager {
         return matchResult;
     }
 
+    /**
+     * @param playerRatingAdjustmentMap
+     * @param matchResultList
+     * @return a new map of ratings.  it uses player Id as key because it is only used internally for processing
+     */
     public Map<Integer, PlayerRatingAdjustment> applyMatchResultList(
             final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
             final List<MatchResult> matchResultList) {
@@ -393,8 +391,9 @@ public class RatingManager {
             } catch (CloneNotSupportedException ex) {
                 newRating = new PlayerRatingAdjustment();
             }
-            newRating.setFirstPassRating(v.getInitialRating());
-            newRating.setFinalRating(v.getInitialRating());
+            newRating.setInitialRating(v.getFinalRating());
+            newRating.setFirstPassRating(v.getFinalRating());
+            newRating.setFinalRating(v.getFinalRating());
             result.put(v.getPlayerId(), newRating);
         });
 
@@ -410,31 +409,65 @@ public class RatingManager {
     }
 
     public Map<String, PlayerRatingAdjustment> getPlayerRatingAdjustmentMap(
-            final TournamentResultRequest tournamentResultRequest) {
+            final TournamentResultLineItem[] tournamentResultList) {
         final Map<String, PlayerRatingAdjustment> map = new HashMap<>();
+
+        final Set<String> playerSet = getPlayerSet(tournamentResultList);
+
+        playerSet.forEach(p -> {
+            final Optional<PlayerRatingAdjustment> rating = playerRepository.findByUserName(p)
+                    .map(Player::getPlayerId)
+                    .flatMap(this::getRating);
+
+            if (rating.isPresent()) {
+                map.put(p, rating.get());
+            }
+        });
 
         return map;
     }
 
     /**
      * returns a set of players who played in the tournament
-     * @param tournamentResultRequest
+     * @param tournamentResultList
      * @return
      */
-    public Set<String> getPlayerSet(final TournamentResultRequest tournamentResultRequest) {
+    public Set<String> getPlayerSet(final TournamentResultLineItem[] tournamentResultList) {
         final Set<String> playerSet = new HashSet<>();
-        for(TournamentResultLineItem result : tournamentResultRequest.getTournamentResultList()) {
+        for(TournamentResultLineItem result : tournamentResultList) {
             playerSet.add(result.getWinner());
             playerSet.add(result.getLoser());
         }
         return playerSet;
     }
 
+    @Transactional
     public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest) {
         final TournamentResultResponse result = new TournamentResultResponse();
 
-        //generateMatchResult()
+        result.setTournamentName(tournamentResultRequest.getTournamentName());
+        result.setTournamentDate(tournamentResultRequest.getTournamentDate());
 
+        final TournamentResultLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
+
+        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
+                getPlayerRatingAdjustmentMap(tournamentResultList);
+
+        final List<MatchResult> matchResultList = Arrays.stream(tournamentResultList).map(
+                tournamentResult -> generateMatchResult(playerRatingAdjustmentMap, tournamentResult))
+                .collect(Collectors.toList());
+
+        final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
+                applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
+
+        final List<TournamentResultLineItemResponse> responseList =
+                newPlayerRatingAdjustmentMap.values().stream().map(r -> {
+                    final TournamentResultLineItemResponse responseLine = new TournamentResultLineItemResponse();
+                    responseLine.setAdjustmentResult(r);
+                    return responseLine;
+                }).collect(Collectors.toList());
+
+        result.setPlayerRatingList(responseList);
         return result;
     }
 }
