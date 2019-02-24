@@ -66,7 +66,7 @@ public class RatingManager {
         return ratingHistory.getContent();
     }
 
-    public PlayerRatingAdjustment adjustRating(PlayerRatingAdjustment playerRatingAdjustment) {
+    public PlayerRatingAdjustment createPlayerRatingAdjustment(PlayerRatingAdjustment playerRatingAdjustment) {
         return playerRatingAdjustmentRepository.save(playerRatingAdjustment);
     }
 
@@ -106,7 +106,7 @@ public class RatingManager {
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
-        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
+        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToRatingAdjustmentRequest(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
                 new ArrayList<>(playerRatingList.size());
@@ -153,7 +153,7 @@ public class RatingManager {
     }
 
     /**
-     * called exclusively by convertCsvToPlayerRatingAdjustment to process a line of header
+     * called exclusively by convertCsvToRatingAdjustmentRequest to process a line of header
      *
      * @param line one line from the CSV
      * @param lineNumber line number (for better error reporting)
@@ -192,7 +192,7 @@ public class RatingManager {
      * @return
      * @throws IOException
      */
-    public RatingAdjustmentRequest convertCsvToPlayerRatingAdjustment(final String csv)
+    private RatingAdjustmentRequest convertCsvToRatingAdjustmentRequest(final String csv)
             throws IOException, RatingInputFormatException {
         final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
         final List<PlayerRatingLineItem> playerRatingLineItemList = new ArrayList<>();
@@ -241,13 +241,18 @@ public class RatingManager {
     }
 
     @Transactional
-    private RatingAdjustmentResponse adjustRatingByCsvWithPlayerFinder(
-            final String csv,
-            final Function<String, Optional<Player>> playerFinder)
+    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, final boolean autoAddPlayer)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
+        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToRatingAdjustmentRequest(csv);
+        return adjustRating(ratingAdjustmentRequest, autoAddPlayer);
+    }
+
+    private RatingAdjustmentResponse adjustRatingWithPlayerFinder(
+            final RatingAdjustmentRequest ratingAdjustmentRequest,
+            final Function<String, Optional<Player>> playerFinder)
+            throws DuplicateTournamentException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
-        final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToPlayerRatingAdjustment(csv);
         final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
         final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
                 new ArrayList<>(playerRatingList.size());
@@ -308,12 +313,13 @@ public class RatingManager {
         return result;
     }
 
-    public RatingAdjustmentResponse adjustRatingByCsv(final String csv, final boolean autoAddPlayer)
-            throws IOException, RatingInputFormatException, DuplicateTournamentException {
+    public RatingAdjustmentResponse adjustRating(
+            final RatingAdjustmentRequest ratingAdjustmentRequest, final boolean autoAddPlayer)
+            throws DuplicateTournamentException {
         if (autoAddPlayer) {
-            return adjustRatingByCsvWithPlayerFinder(csv, this::getOrCreatePlayer);
+            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, this::getOrCreatePlayer);
         } else {
-            return adjustRatingByCsvWithPlayerFinder(csv, this::getPlayer);
+            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, this::getPlayer);
         }
     }
 
@@ -391,6 +397,7 @@ public class RatingManager {
             } catch (CloneNotSupportedException ex) {
                 newRating = new PlayerRatingAdjustment();
             }
+            newRating.setPlayerRatingAdjustmentId(null);
             newRating.setInitialRating(v.getFinalRating());
             newRating.setFirstPassRating(v.getFinalRating());
             newRating.setFinalRating(v.getFinalRating());

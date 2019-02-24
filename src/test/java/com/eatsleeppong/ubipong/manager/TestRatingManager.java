@@ -6,9 +6,9 @@ import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
 import com.eatsleeppong.ubipong.model.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,8 +91,8 @@ public class TestRatingManager {
         patrickRating.setFirstPassRating(patrickFinalRating);
         patrickRating.setFinalRating(patrickFinalRating);
 
-        assertThat(ratingManager.adjustRating(spongeBobRating), notNullValue());
-        assertThat(ratingManager.adjustRating(patrickRating), notNullValue());
+        assertThat(ratingManager.createPlayerRatingAdjustment(spongeBobRating), notNullValue());
+        assertThat(ratingManager.createPlayerRatingAdjustment(patrickRating), notNullValue());
 
         // make sure we set up rating correctly
         final PlayerRatingAdjustment spongeBobSavedRating = ratingManager.getRating(spongeBobId).orElseThrow(
@@ -433,6 +433,29 @@ public class TestRatingManager {
     }
 
     @Test
+    public void adjustPlayerRatingByJson() throws Exception {
+        final RatingAdjustmentRequest ratingAdjustmentRequest = new RatingAdjustmentRequest();
+        ratingAdjustmentRequest.setTournamentName(tournamentName1);
+        ratingAdjustmentRequest.setTournamentDate(df.parse(tournamentDate1));
+
+        final PlayerRatingLineItem spongeBobRatingLineItem = new PlayerRatingLineItem();
+        spongeBobRatingLineItem.setPlayerUserName(spongeBobUserName);
+        spongeBobRatingLineItem.setRating("1234");
+
+        ratingAdjustmentRequest.setPlayerRatingList(Collections.singletonList(spongeBobRatingLineItem));
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRating(ratingAdjustmentRequest, true);
+
+        assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
+        assertThat(ratingAdjustmentResponse.getTournamentDate(), is(df.parse(tournamentDate1)));
+
+        final PlayerRatingAdjustment playerRatingAdjustment =
+                ratingAdjustmentResponse.getPlayerRatingList().get(0).getAdjustmentResult();
+        assertThat(playerRatingAdjustment.getFinalRating(), is(1234));
+    }
+
+    @Test
     public void generateMatchResult() {
         final Integer spongeBobFinalRating = 1000;
         final Integer patrickFinalRating = 1100;
@@ -568,6 +591,9 @@ public class TestRatingManager {
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(0).getProcessed(), is(true));
         assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(1).getProcessed(), is(true));
 
+        final Integer spongeBobId = ratingManager.getPlayerId(spongeBobUserName);
+        final Integer patrickId = ratingManager.getPlayerId(patrickUserName);
+
         final TournamentResultRequest tournamentResultRequest =
                 initializeTournamentResultRequestForSpongeBobAndPatrick();
         tournamentResultRequest.setTournamentName(tournamentName2);
@@ -591,11 +617,18 @@ public class TestRatingManager {
         // verify rating adjustments
         final List<PlayerRatingAdjustment> ratingList = tournamentResultResponse.getPlayerRatingList();
         assertThat(ratingList, hasSize(2));
+        assertThat(ratingList.get(0).getPlayerId(), anyOf(is(spongeBobId), is(patrickId)));
         assertThat(ratingList.get(0).getInitialRating(), is(1000));
         assertThat(ratingList.get(0).getFirstPassRating(), is(1000));
-        assertThat(ratingList.get(0).getFinalRating(), is(1008));
+        assertThat(ratingList.get(0).getFinalRating(), anyOf(is(1008), is(992)));
+        assertThat(ratingList.get(1).getPlayerId(), anyOf(is(spongeBobId), is(patrickId)));
         assertThat(ratingList.get(1).getInitialRating(), is(1000));
         assertThat(ratingList.get(1).getFirstPassRating(), is(1000));
-        assertThat(ratingList.get(1).getFinalRating(), is(992));
+        assertThat(ratingList.get(1).getFinalRating(), anyOf(is(1008), is(992)));
+
+
+        ObjectMapper mapper = new ObjectMapper();
+        String x = mapper.writeValueAsString(tournamentResultResponse);
+        System.out.println(x);
     }
 }
