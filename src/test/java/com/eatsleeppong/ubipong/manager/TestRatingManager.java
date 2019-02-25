@@ -563,8 +563,9 @@ public class TestRatingManager {
         final TournamentResultRequest tournamentResultRequest =
                 initializeTournamentResultRequestForSpongeBobAndPatrick();
 
+        final Set<String> playerSet = ratingManager.getPlayerSet(tournamentResultRequest.getTournamentResultList());
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-                ratingManager.getPlayerRatingAdjustmentMap(tournamentResultRequest.getTournamentResultList());
+                ratingManager.getPlayerRatingAdjustmentMap(playerSet);
 
         final PlayerRatingAdjustment spongeBobRatingAdjustment = playerRatingAdjustmentMap.get(spongeBobUserName);
         final PlayerRatingAdjustment patrickRatingAdjustment = playerRatingAdjustmentMap.get(patrickUserName);
@@ -693,5 +694,21 @@ public class TestRatingManager {
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
                 is(TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER));
+    }
+
+    @Test
+    public void testSubmitTournamentResultAutoAddPlayer() throws Exception {
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+        tournamentResultRequest.setTournamentName(tournamentName2);
+        tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
+
+        final TournamentResultResponse tournamentResultResponse =
+                ratingManager.submitTournamentResult(tournamentResultRequest, true);
+
+        final TournamentResultLineItemResponse responseLineItem =
+                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+
+        assertTrue(responseLineItem.isProcessed());
     }
 }

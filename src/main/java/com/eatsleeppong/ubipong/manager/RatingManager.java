@@ -416,20 +416,20 @@ public class RatingManager {
         return result;
     }
 
+    /**
+     * @param playerSet set of players in the tournament.  we need to find their ratings.
+     * @return a map of players and their ratings.  if the player has no rating, the map will not include the player
+     */
     public Map<String, PlayerRatingAdjustment> getPlayerRatingAdjustmentMap(
-            final TournamentResultLineItem[] tournamentResultList) {
+            final Set<String> playerSet) {
         final Map<String, PlayerRatingAdjustment> map = new HashMap<>();
-
-        final Set<String> playerSet = getPlayerSet(tournamentResultList);
 
         playerSet.forEach(p -> {
             final Optional<PlayerRatingAdjustment> rating = playerRepository.findByUserName(p)
                     .map(Player::getPlayerId)
                     .flatMap(this::getRating);
 
-            if (rating.isPresent()) {
-                map.put(p, rating.get());
-            }
+            rating.map(r -> map.put(p, r));
         });
 
         return map;
@@ -474,20 +474,22 @@ public class RatingManager {
 
         final TournamentResultLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
 
-        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
-                getPlayerRatingAdjustmentMap(tournamentResultList);
+        final Set<String> playerSet = getPlayerSet(tournamentResultList);
+        final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap = getPlayerRatingAdjustmentMap(playerSet);
 
         final List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList =
                 Arrays.stream(tournamentResultList).map(lineItem -> {
                     final TournamentResultLineItemResponse tournamentResultLineItemResponse =
                             new TournamentResultLineItemResponse();
-                    if (!getPlayer(lineItem.getWinner()).isPresent()) {
-                        tournamentResultLineItemResponse.setRejectReason(TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER);
+                    if (!playerFinder.apply(lineItem.getWinner()).isPresent()) {
+                        tournamentResultLineItemResponse.setRejectReason(
+                                TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER);
                         tournamentResultLineItemResponse.setProcessed(false);
                         return tournamentResultLineItemResponse;
                     }
-                    if (!getPlayer(lineItem.getLoser()).isPresent()) {
-                        tournamentResultLineItemResponse.setRejectReason(TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER);
+                    if (!playerFinder.apply(lineItem.getLoser()).isPresent()) {
+                        tournamentResultLineItemResponse.setRejectReason(
+                                TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER);
                         tournamentResultLineItemResponse.setProcessed(false);
                         return tournamentResultLineItemResponse;
                     }
