@@ -66,7 +66,7 @@ public class RatingManager {
         return ratingHistory.getContent();
     }
 
-    public PlayerRatingAdjustment createPlayerRatingAdjustment(PlayerRatingAdjustment playerRatingAdjustment) {
+    public PlayerRatingAdjustment addPlayerRatingAdjustment(PlayerRatingAdjustment playerRatingAdjustment) {
         return playerRatingAdjustmentRepository.save(playerRatingAdjustment);
     }
 
@@ -264,13 +264,14 @@ public class RatingManager {
                     tournamentName));
         }
 
-        Tournament tournament = new Tournament();
+        final Tournament tournament = new Tournament();
         tournament.setName(tournamentName);
         tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
-        tournamentRepository.save(tournament);
+        final Tournament savedTournament = tournamentRepository.save(tournament);
 
         result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
+        result.setTournamentId(savedTournament.getTournamentId());
 
         for (PlayerRatingLineItem playerRating : playerRatingList) {
             final PlayerRatingLineItemResponse playerRatingLineItemResponse = new PlayerRatingLineItemResponse();
@@ -449,11 +450,25 @@ public class RatingManager {
     }
 
     @Transactional
-    public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest) {
+    public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest)
+            throws DuplicateTournamentException {
+        final String tournamentName = tournamentResultRequest.getTournamentName();
+
+        if (getTournament(tournamentName).isPresent()) {
+            throw new DuplicateTournamentException(MessageFormat.format("Tournament '{0}' has already been submitted",
+                    tournamentName));
+        }
+
+        final Tournament tournament = new Tournament();
+        tournament.setName(tournamentName);
+        tournament.setTournamentDate(tournamentResultRequest.getTournamentDate());
+        final Tournament savedTournament = tournamentRepository.save(tournament);
+
         final TournamentResultResponse result = new TournamentResultResponse();
 
         result.setTournamentName(tournamentResultRequest.getTournamentName());
         result.setTournamentDate(tournamentResultRequest.getTournamentDate());
+        result.setTournamentId(savedTournament.getTournamentId());
 
         final TournamentResultLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
 
@@ -477,6 +492,11 @@ public class RatingManager {
         final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
                 applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
 
+        newPlayerRatingAdjustmentMap.values().forEach(adjustment -> {
+            adjustment.setTournamentId(savedTournament.getTournamentId());
+            adjustment.setAdjustmentDate(savedTournament.getTournamentDate());
+            addPlayerRatingAdjustment(adjustment);
+        });
         result.setPlayerRatingList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
 
         return result;

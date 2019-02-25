@@ -6,7 +6,6 @@ import com.eatsleeppong.ubipong.entity.Player;
 import com.eatsleeppong.ubipong.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.entity.Tournament;
 import com.eatsleeppong.ubipong.model.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,8 +90,8 @@ public class TestRatingManager {
         patrickRating.setFirstPassRating(patrickFinalRating);
         patrickRating.setFinalRating(patrickFinalRating);
 
-        assertThat(ratingManager.createPlayerRatingAdjustment(spongeBobRating), notNullValue());
-        assertThat(ratingManager.createPlayerRatingAdjustment(patrickRating), notNullValue());
+        assertThat(ratingManager.addPlayerRatingAdjustment(spongeBobRating), notNullValue());
+        assertThat(ratingManager.addPlayerRatingAdjustment(patrickRating), notNullValue());
 
         // make sure we set up rating correctly
         final PlayerRatingAdjustment spongeBobSavedRating = ratingManager.getRating(spongeBobId).orElseThrow(
@@ -449,6 +448,7 @@ public class TestRatingManager {
 
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
         assertThat(ratingAdjustmentResponse.getTournamentDate(), is(df.parse(tournamentDate1)));
+        assertThat(ratingAdjustmentResponse.getTournamentId(), notNullValue());
 
         final PlayerRatingAdjustment playerRatingAdjustment =
                 ratingAdjustmentResponse.getPlayerRatingList().get(0).getAdjustmentResult();
@@ -604,6 +604,7 @@ public class TestRatingManager {
 
         assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
+        assertThat(tournamentResultResponse.getTournamentId(), notNullValue());
 
         final List<TournamentResultLineItemResponse> tournamentResultResponseList =
                 tournamentResultResponse.getTournamentResultLineItemResponseList();
@@ -626,9 +627,40 @@ public class TestRatingManager {
         assertThat(ratingList.get(1).getFirstPassRating(), is(1000));
         assertThat(ratingList.get(1).getFinalRating(), anyOf(is(1008), is(992)));
 
+        final PlayerRatingAdjustment spongBobRatingAdjustment = ratingManager.getRating(spongeBobId).orElseThrow(
+                () -> new Exception("Could not get SpongeBob rating")
+        );
+        assertThat(spongBobRatingAdjustment.getInitialRating(), is(1000));
+        assertThat(spongBobRatingAdjustment.getFirstPassRating(), is(1000));
+        assertThat(spongBobRatingAdjustment.getFinalRating(), is(1008));
 
-        ObjectMapper mapper = new ObjectMapper();
-        String x = mapper.writeValueAsString(tournamentResultResponse);
-        System.out.println(x);
+        final PlayerRatingAdjustment patrickRatingAdjustment = ratingManager.getRating(patrickId).orElseThrow(
+                () -> new Exception("Could not get Patrick rating")
+        );
+        assertThat(patrickRatingAdjustment.getInitialRating(), is(1000));
+        assertThat(patrickRatingAdjustment.getFirstPassRating(), is(1000));
+        assertThat(patrickRatingAdjustment.getFinalRating(), is(992));
+    }
+
+    @Test(expected = DuplicateTournamentException.class)
+    public void testSubmitTournamentResultDuplicateError() throws Exception {
+        initializeSpongeBobAndPatrick(0, 0);
+
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+        tournamentResultRequest.setTournamentName(tournamentName2);
+        tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
+
+        ratingManager.submitTournamentResult(tournamentResultRequest);
+        ratingManager.submitTournamentResult(tournamentResultRequest);
+    }
+
+    public void testSubmitTournamentResultInvalidUser() throws Exception {
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+        tournamentResultRequest.setTournamentName(tournamentName2);
+        tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
+
+        ratingManager.submitTournamentResult(tournamentResultRequest);
     }
 }
