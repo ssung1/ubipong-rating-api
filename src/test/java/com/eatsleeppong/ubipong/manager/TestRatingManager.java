@@ -600,7 +600,7 @@ public class TestRatingManager {
         tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
 
         final TournamentResultResponse tournamentResultResponse =
-                ratingManager.submitTournamentResult(tournamentResultRequest);
+                ratingManager.submitTournamentResult(tournamentResultRequest, false);
 
         assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
@@ -651,16 +651,47 @@ public class TestRatingManager {
         tournamentResultRequest.setTournamentName(tournamentName2);
         tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
 
-        ratingManager.submitTournamentResult(tournamentResultRequest);
-        ratingManager.submitTournamentResult(tournamentResultRequest);
+        ratingManager.submitTournamentResult(tournamentResultRequest, false);
+        ratingManager.submitTournamentResult(tournamentResultRequest, false);
     }
 
-    public void testSubmitTournamentResultInvalidUser() throws Exception {
+    @Test
+    public void testSubmitTournamentResultInvalidWinner() throws Exception {
+        ratingManager.addPlayer(patrick);
+
         final TournamentResultRequest tournamentResultRequest =
                 initializeTournamentResultRequestForSpongeBobAndPatrick();
         tournamentResultRequest.setTournamentName(tournamentName2);
         tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
 
-        ratingManager.submitTournamentResult(tournamentResultRequest);
+        final TournamentResultResponse tournamentResultResponse =
+                ratingManager.submitTournamentResult(tournamentResultRequest, false);
+
+        final TournamentResultLineItemResponse responseLineItem =
+                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+
+        assertFalse(responseLineItem.isProcessed());
+        assertThat(responseLineItem.getRejectReason(),
+                is(TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER));
+    }
+
+    @Test
+    public void testSubmitTournamentResultInvalidLoser() throws Exception {
+        ratingManager.addPlayer(spongeBob);
+
+        final TournamentResultRequest tournamentResultRequest =
+                initializeTournamentResultRequestForSpongeBobAndPatrick();
+        tournamentResultRequest.setTournamentName(tournamentName2);
+        tournamentResultRequest.setTournamentDate(df.parse(tournamentDate2));
+
+        final TournamentResultResponse tournamentResultResponse =
+                ratingManager.submitTournamentResult(tournamentResultRequest, false);
+
+        final TournamentResultLineItemResponse responseLineItem =
+                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+
+        assertFalse(responseLineItem.isProcessed());
+        assertThat(responseLineItem.getRejectReason(),
+                is(TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER));
     }
 }

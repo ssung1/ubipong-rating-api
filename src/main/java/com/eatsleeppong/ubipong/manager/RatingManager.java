@@ -450,7 +450,9 @@ public class RatingManager {
     }
 
     @Transactional
-    public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest)
+    public TournamentResultResponse submitTournamentResultWithPlayerFinder(
+            final TournamentResultRequest tournamentResultRequest,
+            final Function<String, Optional<Player>> playerFinder)
             throws DuplicateTournamentException {
         final String tournamentName = tournamentResultRequest.getTournamentName();
 
@@ -477,16 +479,28 @@ public class RatingManager {
 
         final List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList =
                 Arrays.stream(tournamentResultList).map(lineItem -> {
-                    final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
                     final TournamentResultLineItemResponse tournamentResultLineItemResponse =
                             new TournamentResultLineItemResponse();
+                    if (!getPlayer(lineItem.getWinner()).isPresent()) {
+                        tournamentResultLineItemResponse.setRejectReason(TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER);
+                        tournamentResultLineItemResponse.setProcessed(false);
+                        return tournamentResultLineItemResponse;
+                    }
+                    if (!getPlayer(lineItem.getLoser()).isPresent()) {
+                        tournamentResultLineItemResponse.setRejectReason(TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER);
+                        tournamentResultLineItemResponse.setProcessed(false);
+                        return tournamentResultLineItemResponse;
+                    }
+                    final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
                     tournamentResultLineItemResponse.setOriginalTournamentResultLineItem(lineItem);
                     tournamentResultLineItemResponse.setMatchResult(matchResult);
+                    tournamentResultLineItemResponse.setProcessed(true);
                     return tournamentResultLineItemResponse;
                 }).collect(Collectors.toList());
         result.setTournamentResultLineItemResponseList(tournamentResultLineItemResponseList);
 
         final List<MatchResult> matchResultList = tournamentResultLineItemResponseList.stream()
+                .filter(TournamentResultLineItemResponse::isProcessed)
                 .map(TournamentResultLineItemResponse::getMatchResult).collect(Collectors.toList());
 
         final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
@@ -500,5 +514,15 @@ public class RatingManager {
         result.setPlayerRatingList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
 
         return result;
+    }
+
+    public TournamentResultResponse submitTournamentResult(final TournamentResultRequest tournamentResultRequest,
+            boolean autoAddPlayer)
+            throws DuplicateTournamentException {
+        if (autoAddPlayer) {
+            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, this::getOrCreatePlayer);
+        } else {
+            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, this::getPlayer);
+        }
     }
 }

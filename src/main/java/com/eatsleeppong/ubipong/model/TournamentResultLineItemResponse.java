@@ -10,8 +10,8 @@ import lombok.Data;
  */
 @Data
 public class TournamentResultLineItemResponse {
-    public static Integer REJECT_REASON_INVALID_PLAYER = 400;
-    public static Integer REJECT_REASON_INVALID_RATING = 401;
+    public static Integer REJECT_REASON_INVALID_WINNER = 400;
+    public static Integer REJECT_REASON_INVALID_LOSER = 401;
 
     private TournamentResultLineItem originalTournamentResultLineItem;
     private MatchResult matchResult;
