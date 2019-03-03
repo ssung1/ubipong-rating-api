@@ -9,7 +9,7 @@ import lombok.Data;
  * created manually, we are making it as simple as possible.
  */
 @Data
-public class PlayerRatingLineItem {
+public class RatingAdjustmentRequestLineItem {
     private String playerUserName;
     private String rating;
 }

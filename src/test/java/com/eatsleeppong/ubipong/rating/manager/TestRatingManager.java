@@ -5,7 +5,6 @@ import com.eatsleeppong.ubipong.rating.entity.MatchResult;
 import com.eatsleeppong.ubipong.rating.entity.Player;
 import com.eatsleeppong.ubipong.rating.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.rating.entity.Tournament;
-import com.eatsleeppong.ubipong.model.*;
 import com.eatsleeppong.ubipong.rating.model.*;
 import name.subroutine.etable.CsvTable;
 import org.junit.Before;
@@ -146,13 +145,13 @@ public class TestRatingManager {
      * @return
      */
     private TournamentResultRequest createTournamentResultRequestForSpongeBobAndPatrick() {
-        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
-        tournamentResultLineItem.setWinner(spongeBobUserName);
-        tournamentResultLineItem.setLoser(patrickUserName);
+        final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
+        tournamentResultRequestLineItem.setWinner(spongeBobUserName);
+        tournamentResultRequestLineItem.setLoser(patrickUserName);
 
         final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
-        tournamentResultRequest.setTournamentResultList(new TournamentResultLineItem[] {
-            tournamentResultLineItem,
+        tournamentResultRequest.setTournamentResultList(new TournamentResultRequestLineItem[] {
+                tournamentResultRequestLineItem,
         });
 
         return tournamentResultRequest;
@@ -252,18 +251,18 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, false);
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-                ratingAdjustmentResponse.getPlayerRatingList();
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+                ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
-        assertFalse(playerRatingLineItemResponseList.get(0).getProcessed());
-        assertThat(playerRatingLineItemResponseList.get(0).getOriginalRequest().getPlayerUserName(), is("inva\"lid"));
-        assertThat(playerRatingLineItemResponseList.get(0).getOriginalRequest().getRating(), is("Rating"));
-        assertTrue(playerRatingLineItemResponseList.get(1).getProcessed());
-        assertThat(playerRatingLineItemResponseList.get(1).getOriginalRequest().getPlayerUserName(), is("spongebob"));
-        assertThat(playerRatingLineItemResponseList.get(1).getOriginalRequest().getRating(), is("1000"));
-        assertTrue(playerRatingLineItemResponseList.get(2).getProcessed());
-        assertThat(playerRatingLineItemResponseList.get(2).getOriginalRequest().getPlayerUserName(), is("patrick"));
-        assertThat(playerRatingLineItemResponseList.get(2).getOriginalRequest().getRating(), is("1100"));
+        assertFalse(ratingAdjustmentResponseLineItemList.get(0).getProcessed());
+        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getPlayerUserName(), is("inva\"lid"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getRating(), is("Rating"));
+        assertTrue(ratingAdjustmentResponseLineItemList.get(1).getProcessed());
+        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getPlayerUserName(), is("spongebob"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getRating(), is("1000"));
+        assertTrue(ratingAdjustmentResponseLineItemList.get(2).getProcessed());
+        assertThat(ratingAdjustmentResponseLineItemList.get(2).getOriginalRequest().getPlayerUserName(), is("patrick"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(2).getOriginalRequest().getRating(), is("1100"));
 
         final Integer spongeBobRating = ratingManager.getRating(spongeBobId)
                 .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
@@ -286,13 +285,13 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingList();
-        final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+            ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
         assertFalse(playerRatingResult.getProcessed());
         assertThat(playerRatingResult.getRejectReason(),
-                is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING));
+                is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
     }
 
     @Test
@@ -305,13 +304,13 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingList();
-        final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+            ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
         assertFalse(playerRatingResult.getProcessed());
         assertThat(playerRatingResult.getRejectReason(),
-                is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER));
+                is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
     }
 
     @Test
@@ -324,9 +323,9 @@ public class TestRatingManager {
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, true);
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingList();
-        final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+            ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
         assertTrue(playerRatingResult.getProcessed());
 
@@ -353,9 +352,9 @@ public class TestRatingManager {
 
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
         assertThat(ratingAdjustmentResponse.getTournamentDate(), is(df.parse(tournamentDate1)));
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-            ratingAdjustmentResponse.getPlayerRatingList();
-        final PlayerRatingLineItemResponse playerRatingResult = playerRatingLineItemResponseList.get(0);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+            ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
         assertTrue(playerRatingResult.getProcessed());
 
@@ -397,13 +396,13 @@ public class TestRatingManager {
         ratingManager.addPlayer(patrick);
 
         final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.verifyRatingByCsv(inputString);
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
-                ratingAdjustmentResponse.getPlayerRatingList();
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+                ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
-        assertThat(playerRatingLineItemResponseList.get(0).getRejectReason(),
-                is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER));
-        assertThat(playerRatingLineItemResponseList.get(1).getRejectReason(),
-            is(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING));
+        assertThat(ratingAdjustmentResponseLineItemList.get(0).getRejectReason(),
+                is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
+        assertThat(ratingAdjustmentResponseLineItemList.get(1).getRejectReason(),
+            is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
     }
 
     @Test(expected = DuplicateTournamentException.class)
@@ -455,11 +454,11 @@ public class TestRatingManager {
         ratingAdjustmentRequest.setTournamentName(tournamentName1);
         ratingAdjustmentRequest.setTournamentDate(df.parse(tournamentDate1));
 
-        final PlayerRatingLineItem spongeBobRatingLineItem = new PlayerRatingLineItem();
+        final RatingAdjustmentRequestLineItem spongeBobRatingLineItem = new RatingAdjustmentRequestLineItem();
         spongeBobRatingLineItem.setPlayerUserName(spongeBobUserName);
         spongeBobRatingLineItem.setRating("1234");
 
-        ratingAdjustmentRequest.setPlayerRatingList(Collections.singletonList(spongeBobRatingLineItem));
+        ratingAdjustmentRequest.setRatingAdjustmentList(Collections.singletonList(spongeBobRatingLineItem));
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRating(ratingAdjustmentRequest, true);
@@ -469,7 +468,7 @@ public class TestRatingManager {
         assertThat(ratingAdjustmentResponse.getTournamentId(), notNullValue());
 
         final PlayerRatingAdjustment playerRatingAdjustment =
-                ratingAdjustmentResponse.getPlayerRatingList().get(0).getAdjustmentResult();
+                ratingAdjustmentResponse.getRatingAdjustmentResponseList().get(0).getAdjustmentResult();
         assertThat(playerRatingAdjustment.getFinalRating(), is(1234));
     }
 
@@ -481,12 +480,12 @@ public class TestRatingManager {
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap =
                 createPlayerRatingAdjustmentForSpongeBobAndPatrick(spongeBobFinalRating, patrickFinalRating);
 
-        final TournamentResultLineItem tournamentResultLineItem = new TournamentResultLineItem();
-        tournamentResultLineItem.setWinner(spongeBobUserName);
-        tournamentResultLineItem.setLoser(patrickUserName);
+        final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
+        tournamentResultRequestLineItem.setWinner(spongeBobUserName);
+        tournamentResultRequestLineItem.setLoser(patrickUserName);
 
         final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
-                tournamentResultLineItem);
+                tournamentResultRequestLineItem);
         assertThat(matchResult.getWinnerId(), is(spongeBobId));
         assertThat(matchResult.getLoserId(), is(patrickId));
         assertThat(matchResult.getWinnerRatingDelta(), is(20));
@@ -607,8 +606,8 @@ public class TestRatingManager {
             ratingManager.adjustRatingByCsv(inputString, true);
 
         assertThat(ratingAdjustmentResponse.getTournamentName(), is(tournamentName1));
-        assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(0).getProcessed(), is(true));
-        assertThat(ratingAdjustmentResponse.getPlayerRatingList().get(1).getProcessed(), is(true));
+        assertThat(ratingAdjustmentResponse.getRatingAdjustmentResponseList().get(0).getProcessed(), is(true));
+        assertThat(ratingAdjustmentResponse.getRatingAdjustmentResponseList().get(1).getProcessed(), is(true));
 
         final Integer spongeBobId = ratingManager.getPlayerId(spongeBobUserName);
         final Integer patrickId = ratingManager.getPlayerId(patrickUserName);
@@ -625,8 +624,8 @@ public class TestRatingManager {
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
         assertThat(tournamentResultResponse.getTournamentId(), notNullValue());
 
-        final List<TournamentResultLineItemResponse> tournamentResultResponseList =
-                tournamentResultResponse.getTournamentResultLineItemResponseList();
+        final List<TournamentResultResponseLineItem> tournamentResultResponseList =
+                tournamentResultResponse.getTournamentResultResponseList();
 
         // verify tournamentResultResponseList, which contains original request plus match result
         assertThat(tournamentResultResponseList, hasSize(1));
@@ -635,7 +634,7 @@ public class TestRatingManager {
         assertThat(tournamentResultResponseList.get(0).getMatchResult().getWinnerRatingDelta(), is(8));
 
         // verify rating adjustments
-        final List<PlayerRatingAdjustment> ratingList = tournamentResultResponse.getPlayerRatingList();
+        final List<PlayerRatingAdjustment> ratingList = tournamentResultResponse.getRatingAdjustmentList();
         assertThat(ratingList, hasSize(2));
         assertThat(ratingList.get(0).getPlayerId(), anyOf(is(spongeBobId), is(patrickId)));
         assertThat(ratingList.get(0).getInitialRating(), is(1000));
@@ -686,12 +685,12 @@ public class TestRatingManager {
         final TournamentResultResponse tournamentResultResponse =
                 ratingManager.submitTournamentResult(tournamentResultRequest, false);
 
-        final TournamentResultLineItemResponse responseLineItem =
-                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+        final TournamentResultResponseLineItem responseLineItem =
+                tournamentResultResponse.getTournamentResultResponseList().get(0);
 
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
-                is(TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER));
+                is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER));
     }
 
     @Test
@@ -706,12 +705,12 @@ public class TestRatingManager {
         final TournamentResultResponse tournamentResultResponse =
                 ratingManager.submitTournamentResult(tournamentResultRequest, false);
 
-        final TournamentResultLineItemResponse responseLineItem =
-                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+        final TournamentResultResponseLineItem responseLineItem =
+                tournamentResultResponse.getTournamentResultResponseList().get(0);
 
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
-                is(TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER));
+                is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER));
     }
 
     @Test
@@ -724,8 +723,8 @@ public class TestRatingManager {
         final TournamentResultResponse tournamentResultResponse =
                 ratingManager.submitTournamentResult(tournamentResultRequest, true);
 
-        final TournamentResultLineItemResponse responseLineItem =
-                tournamentResultResponse.getTournamentResultLineItemResponseList().get(0);
+        final TournamentResultResponseLineItem responseLineItem =
+                tournamentResultResponse.getTournamentResultResponseList().get(0);
 
         assertTrue(responseLineItem.isProcessed());
     }

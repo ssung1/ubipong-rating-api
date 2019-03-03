@@ -4,15 +4,15 @@ import com.eatsleeppong.ubipong.rating.entity.PlayerRatingAdjustment;
 import lombok.Data;
 
 /**
- * After a PlayerRatingLineItem is processed, we return this result, which includes the original PlayerRatingLineItem
- * plus any error codes if the request could not be processed.
+ * After a RatingAdjustmentRequestLineItem is processed, we return this result, which includes the original
+ * RatingAdjustmentRequestLineItem plus any error codes if the request could not be processed.
  */
 @Data
-public class PlayerRatingLineItemResponse {
+public class RatingAdjustmentResponseLineItem {
     public static Integer REJECT_REASON_INVALID_PLAYER = 400;
     public static Integer REJECT_REASON_INVALID_RATING = 401;
 
-    private PlayerRatingLineItem originalRequest;
+    private RatingAdjustmentRequestLineItem originalRequest;
     private PlayerRatingAdjustment adjustmentResult;
 
     private Boolean processed;

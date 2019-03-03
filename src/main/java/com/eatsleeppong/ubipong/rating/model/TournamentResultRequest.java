@@ -9,5 +9,5 @@ public class TournamentResultRequest {
     private String tournamentName;
     private Date tournamentDate;
 
-    private TournamentResultLineItem[] tournamentResultList;
+    private TournamentResultRequestLineItem[] tournamentResultList;
 }

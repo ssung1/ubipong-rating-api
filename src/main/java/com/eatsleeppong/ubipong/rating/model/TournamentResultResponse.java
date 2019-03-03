@@ -16,6 +16,6 @@ public class TournamentResultResponse {
     private String tournamentName;
     private Date tournamentDate;
 
-    private List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList;
-    private List<PlayerRatingAdjustment> playerRatingList;
+    private List<TournamentResultResponseLineItem> tournamentResultResponseList;
+    private List<PlayerRatingAdjustment> ratingAdjustmentList;
 }

@@ -5,7 +5,6 @@ import com.eatsleeppong.ubipong.rating.controller.RatingInputFormatException;
 import com.eatsleeppong.ubipong.rating.entity.MatchResult;
 import com.eatsleeppong.ubipong.rating.entity.Player;
 import com.eatsleeppong.ubipong.rating.entity.Tournament;
-import com.eatsleeppong.ubipong.model.*;
 import com.eatsleeppong.ubipong.rating.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.rating.model.*;
 import com.eatsleeppong.ubipong.rating.repository.PlayerRatingAdjustmentRepository;
@@ -108,8 +107,8 @@ public class RatingManager {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
         final RatingAdjustmentRequest ratingAdjustmentRequest = convertCsvToRatingAdjustmentRequest(csv);
-        final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
+        final List<RatingAdjustmentRequestLineItem> playerRatingList = ratingAdjustmentRequest.getRatingAdjustmentList();
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 new ArrayList<>(playerRatingList.size());
 
         final String tournamentName = ratingAdjustmentRequest.getTournamentName();
@@ -122,16 +121,16 @@ public class RatingManager {
         result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
 
-        for (PlayerRatingLineItem playerRating : playerRatingList) {
-            final PlayerRatingLineItemResponse playerRatingResult = new PlayerRatingLineItemResponse();
+        for (RatingAdjustmentRequestLineItem playerRating : playerRatingList) {
+            final RatingAdjustmentResponseLineItem playerRatingResult = new RatingAdjustmentResponseLineItem();
             playerRatingResult.setOriginalRequest(playerRating);
 
             final String playerUserName = playerRating.getPlayerUserName();
             final Optional<Player> player = getPlayer(playerUserName);
             if (!player.isPresent()) {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER);
-                playerRatingLineItemResponseList.add(playerRatingResult);
+                playerRatingResult.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
+                ratingAdjustmentResponseLineItemList.add(playerRatingResult);
                 continue;
             }
 
@@ -139,17 +138,17 @@ public class RatingManager {
                 final Integer rating = Integer.parseInt(playerRating.getRating());
                 if (rating < 0) {
                     playerRatingResult.setProcessed(false);
-                    playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
-                    playerRatingLineItemResponseList.add(playerRatingResult);
+                    playerRatingResult.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING);
+                    ratingAdjustmentResponseLineItemList.add(playerRatingResult);
                 }
             } catch (Exception ex) {
                 playerRatingResult.setProcessed(false);
-                playerRatingResult.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
-                playerRatingLineItemResponseList.add(playerRatingResult);
+                playerRatingResult.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING);
+                ratingAdjustmentResponseLineItemList.add(playerRatingResult);
             }
         }
 
-        result.setPlayerRatingList(playerRatingLineItemResponseList);
+        result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
         return result;
     }
 
@@ -196,7 +195,7 @@ public class RatingManager {
     private RatingAdjustmentRequest convertCsvToRatingAdjustmentRequest(final String csv)
             throws IOException, RatingInputFormatException {
         final RatingAdjustmentRequest result = new RatingAdjustmentRequest();
-        final List<PlayerRatingLineItem> playerRatingLineItemList = new ArrayList<>();
+        final List<RatingAdjustmentRequestLineItem> ratingAdjustmentRequestLineItemList = new ArrayList<>();
         try(
                 final StringReader sr = new StringReader(csv);
                 final BufferedReader br = new BufferedReader(sr)
@@ -216,7 +215,7 @@ public class RatingManager {
             });
 
             while(true) {
-                final PlayerRatingLineItem playerRating = new PlayerRatingLineItem();
+                final RatingAdjustmentRequestLineItem playerRating = new RatingAdjustmentRequestLineItem();
                 final String line = br.readLine();
                 if(line == null) break;
 
@@ -230,14 +229,14 @@ public class RatingManager {
                         playerRating.setRating(record[1].trim());
                     }
 
-                    playerRatingLineItemList.add(playerRating);
+                    ratingAdjustmentRequestLineItemList.add(playerRating);
                 } catch (Exception ex) {
                     // can't do much
                 }
             }
         }
 
-        result.setPlayerRatingList(playerRatingLineItemList);
+        result.setRatingAdjustmentList(ratingAdjustmentRequestLineItemList);
         return result;
     }
 
@@ -254,8 +253,8 @@ public class RatingManager {
             throws DuplicateTournamentException {
 
         final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
-        final List<PlayerRatingLineItem> playerRatingList = ratingAdjustmentRequest.getPlayerRatingList();
-        final List<PlayerRatingLineItemResponse> playerRatingLineItemResponseList =
+        final List<RatingAdjustmentRequestLineItem> playerRatingList = ratingAdjustmentRequest.getRatingAdjustmentList();
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 new ArrayList<>(playerRatingList.size());
 
         final String tournamentName = ratingAdjustmentRequest.getTournamentName();
@@ -274,10 +273,10 @@ public class RatingManager {
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
         result.setTournamentId(savedTournament.getTournamentId());
 
-        for (PlayerRatingLineItem playerRating : playerRatingList) {
-            final PlayerRatingLineItemResponse playerRatingLineItemResponse = new PlayerRatingLineItemResponse();
-            playerRatingLineItemResponseList.add(playerRatingLineItemResponse);
-            playerRatingLineItemResponse.setOriginalRequest(playerRating);
+        for (RatingAdjustmentRequestLineItem playerRating : playerRatingList) {
+            final RatingAdjustmentResponseLineItem ratingAdjustmentResponseLineItem = new RatingAdjustmentResponseLineItem();
+            ratingAdjustmentResponseLineItemList.add(ratingAdjustmentResponseLineItem);
+            ratingAdjustmentResponseLineItem.setOriginalRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
 
@@ -286,8 +285,8 @@ public class RatingManager {
             if (player.isPresent()) {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
             } else {
-                playerRatingLineItemResponse.setProcessed(false);
-                playerRatingLineItemResponse.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_PLAYER);
+                ratingAdjustmentResponseLineItem.setProcessed(false);
+                ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
                 continue;
             }
 
@@ -301,17 +300,17 @@ public class RatingManager {
                 playerRatingAdjustment.setFinalRating(rating);
                 playerRatingAdjustment.setAdjustmentDate(ratingAdjustmentRequest.getTournamentDate());
             } catch (Exception ex) {
-                playerRatingLineItemResponse.setProcessed(false);
-                playerRatingLineItemResponse.setRejectReason(PlayerRatingLineItemResponse.REJECT_REASON_INVALID_RATING);
+                ratingAdjustmentResponseLineItem.setProcessed(false);
+                ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING);
                 continue;
             }
 
             playerRatingAdjustmentRepository.save(playerRatingAdjustment);
-            playerRatingLineItemResponse.setAdjustmentResult(playerRatingAdjustment);
-            playerRatingLineItemResponse.setProcessed(true);
+            ratingAdjustmentResponseLineItem.setAdjustmentResult(playerRatingAdjustment);
+            ratingAdjustmentResponseLineItem.setProcessed(true);
         }
 
-        result.setPlayerRatingList(playerRatingLineItemResponseList);
+        result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
         return result;
     }
 
@@ -358,14 +357,14 @@ public class RatingManager {
      * final ratings (from their latest adjustment), in the form of PlayerRatingAdjustment.
      *
      * @param playerRatingAdjustmentMap
-     * @param tournamentResultLineItem
+     * @param tournamentResultRequestLineItem
      * @return
      */
     public MatchResult generateMatchResult(
             final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
-            final TournamentResultLineItem tournamentResultLineItem) {
-        final String winnerUserName = tournamentResultLineItem.getWinner();
-        final String loserUserName = tournamentResultLineItem.getLoser();
+            final TournamentResultRequestLineItem tournamentResultRequestLineItem) {
+        final String winnerUserName = tournamentResultRequestLineItem.getWinner();
+        final String loserUserName = tournamentResultRequestLineItem.getLoser();
 
         final PlayerRatingAdjustment winnerRating = playerRatingAdjustmentMap.get(winnerUserName);
         final PlayerRatingAdjustment loserRating = playerRatingAdjustmentMap.get(loserUserName);
@@ -441,9 +440,9 @@ public class RatingManager {
      * @param tournamentResultList
      * @return
      */
-    public Set<String> getPlayerSet(final TournamentResultLineItem[] tournamentResultList) {
+    public Set<String> getPlayerSet(final TournamentResultRequestLineItem[] tournamentResultList) {
         final Set<String> playerSet = new HashSet<>();
-        for(TournamentResultLineItem result : tournamentResultList) {
+        for(TournamentResultRequestLineItem result : tournamentResultList) {
             playerSet.add(result.getWinner());
             playerSet.add(result.getLoser());
         }
@@ -473,38 +472,38 @@ public class RatingManager {
         result.setTournamentDate(tournamentResultRequest.getTournamentDate());
         result.setTournamentId(savedTournament.getTournamentId());
 
-        final TournamentResultLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
+        final TournamentResultRequestLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
 
         final Set<String> playerSet = getPlayerSet(tournamentResultList);
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap = getPlayerRatingAdjustmentMap(playerSet);
 
-        final List<TournamentResultLineItemResponse> tournamentResultLineItemResponseList =
+        final List<TournamentResultResponseLineItem> tournamentResultResponseLineItemList =
                 Arrays.stream(tournamentResultList).map(lineItem -> {
-                    final TournamentResultLineItemResponse tournamentResultLineItemResponse =
-                            new TournamentResultLineItemResponse();
+                    final TournamentResultResponseLineItem tournamentResultResponseLineItem =
+                            new TournamentResultResponseLineItem();
                     if (!playerFinder.apply(lineItem.getWinner()).isPresent()) {
-                        tournamentResultLineItemResponse.setRejectReason(
-                                TournamentResultLineItemResponse.REJECT_REASON_INVALID_WINNER);
-                        tournamentResultLineItemResponse.setProcessed(false);
-                        return tournamentResultLineItemResponse;
+                        tournamentResultResponseLineItem.setRejectReason(
+                                TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER);
+                        tournamentResultResponseLineItem.setProcessed(false);
+                        return tournamentResultResponseLineItem;
                     }
                     if (!playerFinder.apply(lineItem.getLoser()).isPresent()) {
-                        tournamentResultLineItemResponse.setRejectReason(
-                                TournamentResultLineItemResponse.REJECT_REASON_INVALID_LOSER);
-                        tournamentResultLineItemResponse.setProcessed(false);
-                        return tournamentResultLineItemResponse;
+                        tournamentResultResponseLineItem.setRejectReason(
+                                TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER);
+                        tournamentResultResponseLineItem.setProcessed(false);
+                        return tournamentResultResponseLineItem;
                     }
                     final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
-                    tournamentResultLineItemResponse.setOriginalTournamentResultLineItem(lineItem);
-                    tournamentResultLineItemResponse.setMatchResult(matchResult);
-                    tournamentResultLineItemResponse.setProcessed(true);
-                    return tournamentResultLineItemResponse;
+                    tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
+                    tournamentResultResponseLineItem.setMatchResult(matchResult);
+                    tournamentResultResponseLineItem.setProcessed(true);
+                    return tournamentResultResponseLineItem;
                 }).collect(Collectors.toList());
-        result.setTournamentResultLineItemResponseList(tournamentResultLineItemResponseList);
+        result.setTournamentResultResponseList(tournamentResultResponseLineItemList);
 
-        final List<MatchResult> matchResultList = tournamentResultLineItemResponseList.stream()
-                .filter(TournamentResultLineItemResponse::isProcessed)
-                .map(TournamentResultLineItemResponse::getMatchResult).collect(Collectors.toList());
+        final List<MatchResult> matchResultList = tournamentResultResponseLineItemList.stream()
+                .filter(TournamentResultResponseLineItem::isProcessed)
+                .map(TournamentResultResponseLineItem::getMatchResult).collect(Collectors.toList());
 
         final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
                 applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
@@ -514,7 +513,7 @@ public class RatingManager {
             adjustment.setAdjustmentDate(savedTournament.getTournamentDate());
             addPlayerRatingAdjustment(adjustment);
         });
-        result.setPlayerRatingList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
+        result.setRatingAdjustmentList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
 
         return result;
     }
