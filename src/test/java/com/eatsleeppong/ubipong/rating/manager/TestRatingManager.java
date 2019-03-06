@@ -382,6 +382,16 @@ public class TestRatingManager {
         assertThat(tournament.isPresent(), is(true));
         assertThat(tournament.get().getName(), is(tournamentName1));
         assertThat(tournament.get().getTournamentId(), is(greaterThan(0)));
+
+        final Optional<Player> spongeBob = ratingManager.getPlayer(spongeBobUserName);
+
+        assertThat(spongeBob.isPresent(), is(true));
+
+        final Optional<PlayerRatingAdjustment> rating = ratingManager.getRating(
+                spongeBob.map(Player::getPlayerId).orElse(0));
+
+        assertThat(rating.map(PlayerRatingAdjustment::getTournamentId).orElse(0),
+                is(tournament.get().getTournamentId()));
     }
 
     @Test

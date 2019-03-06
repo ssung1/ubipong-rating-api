@@ -279,6 +279,7 @@ public class RatingManager {
             ratingAdjustmentResponseLineItem.setOriginalRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
+            playerRatingAdjustment.setTournamentId(savedTournament.getTournamentId());
 
             final String playerUserName = playerRating.getPlayerUserName();
             final Optional<Player> player = playerFinder.apply(playerUserName);
