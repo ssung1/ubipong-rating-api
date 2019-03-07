@@ -245,24 +245,20 @@ public class TestRatingManager {
                 "tournamentName, test-tournament-1\n" +
                 "date, 2019-01-01T00:00:00-0500\n" +
                 "player, rating\n" +
-                "\"inva\"\"lid\",       Rating\n" +
-                "spongebob,      1000\n" +
-                "\"patrick\",    1100\n";
+                "spongebob,   1000\n" +
+                "\"patrick\", 1100\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, false);
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
-        assertFalse(ratingAdjustmentResponseLineItemList.get(0).getProcessed());
-        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getPlayerUserName(), is("inva\"lid"));
-        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getRating(), is("Rating"));
+        assertTrue(ratingAdjustmentResponseLineItemList.get(0).getProcessed());
+        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getPlayerUserName(), is("spongebob"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getRating(), is("1000"));
         assertTrue(ratingAdjustmentResponseLineItemList.get(1).getProcessed());
-        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getPlayerUserName(), is("spongebob"));
-        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getRating(), is("1000"));
-        assertTrue(ratingAdjustmentResponseLineItemList.get(2).getProcessed());
-        assertThat(ratingAdjustmentResponseLineItemList.get(2).getOriginalRequest().getPlayerUserName(), is("patrick"));
-        assertThat(ratingAdjustmentResponseLineItemList.get(2).getOriginalRequest().getRating(), is("1100"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getPlayerUserName(), is("patrick"));
+        assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getRating(), is("1100"));
 
         final Integer spongeBobRating = ratingManager.getRating(spongeBobId)
                 .map(PlayerRatingAdjustment::getFinalRating).orElse(0);
@@ -311,6 +307,68 @@ public class TestRatingManager {
         assertFalse(playerRatingResult.getProcessed());
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
+    }
+
+    /**
+     * All-or-none adjustment: if there is an error, no records are inserted
+     * @throws Exception
+     */
+    @Test
+    public void adjustPlayerRatingByCsvInvalidPlayerNoAutoAddGoodRecordNotAdded() throws Exception {
+        final String inputString =
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "spongebob,    1000\n" +
+                "patrick,      1000\n";
+
+        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, false);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+                ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        // if there is an error, only errors are reported
+        assertThat(ratingAdjustmentResponseLineItemList, hasSize(1));
+
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
+
+        assertFalse(playerRatingResult.getProcessed());
+        assertThat(playerRatingResult.getRejectReason(),
+                is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
+
+        final Optional<PlayerRatingAdjustment> patrickRating = ratingManager.getRating(patrickId);
+        assertFalse("Patrick rating should not be added because spongebob rating failed to add",
+                patrickRating.isPresent());
+    }
+
+    @Test
+    public void adjustPlayerRatingByCsvInvalidRatingNoRecordsAdded() throws Exception {
+        final String inputString =
+                "tournamentName, test-tournament-1\n" +
+                "date, " + tournamentDate1 + "\n" +
+                "player, rating\n" +
+                "\"inva\"\"lid\",       Rating\n" +
+                "patrick,      1000\n";
+
+        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+
+        final RatingAdjustmentResponse ratingAdjustmentResponse =
+                ratingManager.adjustRatingByCsv(inputString, false);
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+                ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+        // if there is an error, only errors are reported
+        assertThat(ratingAdjustmentResponseLineItemList, hasSize(1));
+
+        final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
+
+        assertFalse(playerRatingResult.getProcessed());
+        assertThat(playerRatingResult.getRejectReason(),
+                is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
+
+        final Optional<PlayerRatingAdjustment> patrickRating = ratingManager.getRating(patrickId);
+        assertFalse("Patrick rating should not be added because spongebob rating failed to add",
+                patrickRating.isPresent());
     }
 
     @Test
@@ -395,7 +453,7 @@ public class TestRatingManager {
     }
 
     @Test
-    public void dryRunWithSummaryOfFailedOnly() throws Exception {
+    public void multipleErrorRecords() throws Exception {
         final String inputString =
                 "tournamentName, " + tournamentName1 + "\n" +
                 "date, " + tournamentDate1 + "\n" +
@@ -405,7 +463,7 @@ public class TestRatingManager {
 
         ratingManager.addPlayer(patrick);
 
-        final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.verifyRatingByCsv(inputString);
+        final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.adjustRatingByCsv(inputString, false);
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
@@ -440,7 +498,6 @@ public class TestRatingManager {
                 "tournamentName, test-tournament-2\n" +
                 "date, " + tournamentDate2 + "\n" +
                 "player, rating\n" +
-                "Player,       Rating\n" +
                 "spongebob,      1100\n";
 
         ratingManager.adjustRatingByCsv(tournament1, false);

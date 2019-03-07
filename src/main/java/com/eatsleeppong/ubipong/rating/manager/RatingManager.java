@@ -273,6 +273,7 @@ public class RatingManager {
         result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
         result.setTournamentId(savedTournament.getTournamentId());
 
+        boolean isAllProcessed = true;
         for (RatingAdjustmentRequestLineItem playerRating : playerRatingList) {
             final RatingAdjustmentResponseLineItem ratingAdjustmentResponseLineItem = new RatingAdjustmentResponseLineItem();
             ratingAdjustmentResponseLineItemList.add(ratingAdjustmentResponseLineItem);
@@ -288,6 +289,7 @@ public class RatingManager {
             } else {
                 ratingAdjustmentResponseLineItem.setProcessed(false);
                 ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
+                isAllProcessed = false;
                 continue;
             }
 
@@ -303,15 +305,29 @@ public class RatingManager {
             } catch (Exception ex) {
                 ratingAdjustmentResponseLineItem.setProcessed(false);
                 ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING);
+                isAllProcessed = false;
                 continue;
             }
 
-            playerRatingAdjustmentRepository.save(playerRatingAdjustment);
+            //playerRatingAdjustmentRepository.save(playerRatingAdjustment);
             ratingAdjustmentResponseLineItem.setAdjustmentResult(playerRatingAdjustment);
             ratingAdjustmentResponseLineItem.setProcessed(true);
         }
 
         result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
+
+        // we only do the database operation if all the records pass sanity check
+        if (isAllProcessed) {
+            ratingAdjustmentResponseLineItemList.forEach(adj -> {
+
+                // .getAdjustmentResult is where we keep the PlayerRatingAdjustment entities
+                final PlayerRatingAdjustment savedAdj = playerRatingAdjustmentRepository.save(
+                        adj.getAdjustmentResult());
+                // savedAdj has the ID
+                adj.setAdjustmentResult(savedAdj);
+            });
+        }
+
         return result;
     }
 
