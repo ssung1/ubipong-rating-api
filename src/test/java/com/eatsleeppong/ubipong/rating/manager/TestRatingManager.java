@@ -354,7 +354,7 @@ public class TestRatingManager {
         final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
-                ratingManager.adjustRatingByCsv(inputString, false);
+                ratingManager.adjustRatingByCsv(inputString, true);
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
         // if there is an error, only errors are reported

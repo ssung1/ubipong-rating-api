@@ -49,8 +49,8 @@ spring:
     type: com.zaxxer.hikari.HikariDataSource
     # url specifies a file name, appended with ".mv.db"
     url: jdbc:mysql://eatsleeppong.com/eatsle12_ubipong
-    username: eatsle12_ubipong
-    password: ubipong
+    username:
+    password: 
   jpa:
     hibernate:
       ddl-auto: update

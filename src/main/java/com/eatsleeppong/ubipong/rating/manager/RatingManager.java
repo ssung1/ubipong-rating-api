@@ -260,7 +260,7 @@ public class RatingManager {
         final String tournamentName = ratingAdjustmentRequest.getTournamentName();
 
         if (getTournament(tournamentName).isPresent()) {
-            throw new DuplicateTournamentException(MessageFormat.format("Tournament '{0}' has already been recorded",
+            throw new DuplicateTournamentException(MessageFormat.format("Tournament \"{0}\" has already been recorded",
                     tournamentName));
         }
 
@@ -314,8 +314,6 @@ public class RatingManager {
             ratingAdjustmentResponseLineItem.setProcessed(true);
         }
 
-        result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
-
         // we only do the database operation if all the records pass sanity check
         if (isAllProcessed) {
             ratingAdjustmentResponseLineItemList.forEach(adj -> {
@@ -326,6 +324,12 @@ public class RatingManager {
                 // savedAdj has the ID
                 adj.setAdjustmentResult(savedAdj);
             });
+            result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
+        } else {
+            final List<RatingAdjustmentResponseLineItem> errorList = ratingAdjustmentResponseLineItemList
+                    .stream().filter(r -> !r.isProcessed())
+                    .collect(Collectors.toList());
+            result.setRatingAdjustmentResponseList(errorList);
         }
 
         return result;
