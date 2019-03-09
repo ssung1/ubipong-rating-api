@@ -2,14 +2,17 @@ package com.eatsleeppong.ubipong.rating.controller;
 
 import com.eatsleeppong.ubipong.rating.manager.RatingManager;
 import com.eatsleeppong.ubipong.rating.model.RatingAdjustmentResponse;
+import com.eatsleeppong.ubipong.rating.model.TournamentResultRequest;
+import com.eatsleeppong.ubipong.rating.model.TournamentResultResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import javax.print.attribute.standard.Media;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/rest/rating")
+@RequestMapping("/rest/v0/rating")
 public class RatingController {
     private RatingManager ratingManager;
 
@@ -34,8 +37,17 @@ public class RatingController {
     }
 
     @PostMapping(value = "/rating-adjustment", consumes = "text/csv", produces = MediaType.APPLICATION_JSON_VALUE)
-    public RatingAdjustmentResponse ratingAdjustmentByCsv(@RequestBody String ratingAdjustmentCsv)
+    public RatingAdjustmentResponse postRatingAdjustmentByCsv(@RequestBody final String ratingAdjustmentCsv,
+            @RequestParam(defaultValue = "false") final boolean autoAddPlayer)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
-        return this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, true);
+        return this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, autoAddPlayer);
+    }
+
+    @PostMapping(value = "/tournament-result", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public TournamentResultResponse postTournamentResult(@RequestBody final TournamentResultRequest
+            tournamentResultRequest, @RequestParam(defaultValue = "false") final boolean autoAddPlayer)
+            throws DuplicateTournamentException {
+        return this.ratingManager.submitTournamentResult(tournamentResultRequest, autoAddPlayer);
     }
 }

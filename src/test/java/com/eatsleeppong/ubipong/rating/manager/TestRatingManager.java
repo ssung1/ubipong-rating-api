@@ -758,6 +758,7 @@ public class TestRatingManager {
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
                 is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER));
+        assertThat(responseLineItem.getOriginalTournamentResultLineItem().getWinner(), is(spongeBobUserName));
     }
 
     @Test
@@ -778,6 +779,7 @@ public class TestRatingManager {
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
                 is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER));
+        assertThat(responseLineItem.getOriginalTournamentResultLineItem().getLoser(), is(patrickUserName));
     }
 
     @Test

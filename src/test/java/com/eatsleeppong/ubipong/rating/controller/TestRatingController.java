@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.rating.controller;
 
+import com.eatsleeppong.ubipong.rating.model.RatingAdjustmentResponseLineItem;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class TestRatingController {
     @Test
     public void testInvalidCsvFormatResponseMissingLine1() throws Exception {
         mockMvc.perform(
-                post("/rest/rating/rating-adjustment")
+                post("/rest/v0/rating/rating-adjustment")
                 .contentType("text/csv")
                 .content(""))
 
@@ -48,7 +49,7 @@ public class TestRatingController {
     @Test
     public void testInvalidCsvFormatResponseMissingTournamentName() throws Exception {
         mockMvc.perform(
-            post("/rest/rating/rating-adjustment")
+            post("/rest/v0/rating/rating-adjustment")
                 .contentType("text/csv")
                 .content("stuff stuff"))
 
@@ -59,7 +60,7 @@ public class TestRatingController {
     @Test
     public void testInvalidCsvFormatResponseMissingLine2() throws Exception {
         mockMvc.perform(
-            post("/rest/rating/rating-adjustment")
+            post("/rest/v0/rating/rating-adjustment")
                 .contentType("text/csv")
                 .content("tournamentName, test tournament"))
 
@@ -70,7 +71,7 @@ public class TestRatingController {
     @Test
     public void testInvalidCsvFormatResponseMissingTournamentDate() throws Exception {
         mockMvc.perform(
-            post("/rest/rating/rating-adjustment")
+            post("/rest/v0/rating/rating-adjustment")
                 .contentType("text/csv")
                 .content(
                         "tournamentName, test tournament\n" +
@@ -84,7 +85,7 @@ public class TestRatingController {
     @Test
     public void testInvalidCsvFormatResponseMissingPlayerRatingHeader() throws Exception {
         mockMvc.perform(
-            post("/rest/rating/rating-adjustment")
+            post("/rest/v0/rating/rating-adjustment")
                 .contentType("text/csv")
                 .content(
                         "tournamentName, test tournament\n" +
@@ -93,5 +94,22 @@ public class TestRatingController {
 
             .andExpect(status().is4xxClientError())
             .andExpect(jsonPath("message").value(is("Missing line 3")));
+    }
+
+    @Test
+    public void testPostRatingAdjustmentDefaultNoAutoAddPlayerMissingPlayer() throws Exception {
+        mockMvc.perform(
+                post("/rest/v0/rating/rating-adjustment")
+                        .contentType("text/csv")
+                        .content(
+                                "tournamentName, test tournament\n" +
+                                "date, 2019-01-13T17:59:00-0500\n" +
+                                "player, rating\n" +
+                                "invalid-player, 1234\n"
+                        ))
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("ratingAdjustmentResponseList[0].processed").value(is(false)))
+                .andExpect(jsonPath("ratingAdjustmentResponseList[0].rejectReason")
+                        .value(is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER)));
     }
 }

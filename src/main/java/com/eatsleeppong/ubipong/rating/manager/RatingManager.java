@@ -503,12 +503,14 @@ public class RatingManager {
                     final TournamentResultResponseLineItem tournamentResultResponseLineItem =
                             new TournamentResultResponseLineItem();
                     if (!playerFinder.apply(lineItem.getWinner()).isPresent()) {
+                        tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
                         tournamentResultResponseLineItem.setRejectReason(
                                 TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER);
                         tournamentResultResponseLineItem.setProcessed(false);
                         return tournamentResultResponseLineItem;
                     }
                     if (!playerFinder.apply(lineItem.getLoser()).isPresent()) {
+                        tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
                         tournamentResultResponseLineItem.setRejectReason(
                                 TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER);
                         tournamentResultResponseLineItem.setProcessed(false);
