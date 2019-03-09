@@ -264,15 +264,6 @@ public class RatingManager {
                     tournamentName));
         }
 
-        final Tournament tournament = new Tournament();
-        tournament.setName(tournamentName);
-        tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
-        final Tournament savedTournament = tournamentRepository.save(tournament);
-
-        result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
-        result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
-        result.setTournamentId(savedTournament.getTournamentId());
-
         boolean isAllProcessed = true;
         for (RatingAdjustmentRequestLineItem playerRating : playerRatingList) {
             final RatingAdjustmentResponseLineItem ratingAdjustmentResponseLineItem = new RatingAdjustmentResponseLineItem();
@@ -280,7 +271,6 @@ public class RatingManager {
             ratingAdjustmentResponseLineItem.setOriginalRequest(playerRating);
 
             final PlayerRatingAdjustment playerRatingAdjustment = new PlayerRatingAdjustment();
-            playerRatingAdjustment.setTournamentId(savedTournament.getTournamentId());
 
             final String playerUserName = playerRating.getPlayerUserName();
             final Optional<Player> player = playerFinder.apply(playerUserName);
@@ -316,7 +306,17 @@ public class RatingManager {
 
         // we only do the database operation if all the records pass sanity check
         if (isAllProcessed) {
+            final Tournament tournament = new Tournament();
+            tournament.setName(tournamentName);
+            tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+            final Tournament savedTournament = tournamentRepository.save(tournament);
+
+            result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+            result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
+            result.setTournamentId(savedTournament.getTournamentId());
+
             ratingAdjustmentResponseLineItemList.forEach(adj -> {
+                adj.getAdjustmentResult().setTournamentId(savedTournament.getTournamentId());
 
                 // .getAdjustmentResult is where we keep the PlayerRatingAdjustment entities
                 final PlayerRatingAdjustment savedAdj = playerRatingAdjustmentRepository.save(
