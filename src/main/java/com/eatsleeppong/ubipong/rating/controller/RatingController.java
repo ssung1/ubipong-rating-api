@@ -1,5 +1,6 @@
 package com.eatsleeppong.ubipong.rating.controller;
 
+import com.eatsleeppong.ubipong.rating.entity.PlayerRatingAdjustment;
 import com.eatsleeppong.ubipong.rating.manager.RatingManager;
 import com.eatsleeppong.ubipong.rating.model.RatingAdjustmentResponse;
 import com.eatsleeppong.ubipong.rating.model.TournamentResultRequest;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.print.attribute.standard.Media;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/rest/v0/rating")
@@ -57,5 +59,11 @@ public class RatingController {
             tournamentResultRequest, @RequestParam(defaultValue = "false") final boolean autoAddPlayer)
             throws DuplicateTournamentException {
         return this.ratingManager.submitTournamentResult(tournamentResultRequest, autoAddPlayer);
+    }
+
+    @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<PlayerRatingAdjustment> getPlayerCurrentRating(@RequestParam final String player,
+            @RequestParam(defaultValue = "3") final int size) {
+        return this.ratingManager.getRatingHistory(player, size);
     }
 }

@@ -50,20 +50,33 @@ public class RatingManager {
         this.ratingCalculator = ratingCalculator;
     }
 
-    public Optional<PlayerRatingAdjustment> getRating(Integer playerId) {
-       Page<PlayerRatingAdjustment> ratingHistory =
+    public Optional<PlayerRatingAdjustment> getRatingByPlayerId(Integer playerId) {
+       final Page<PlayerRatingAdjustment> ratingHistory =
            playerRatingAdjustmentRepository.findByPlayerId(playerId,
                    PageRequest.of(0, 1, Sort.Direction.DESC, "adjustmentDate"));
 
        return ratingHistory.get().findFirst();
     }
 
-    public List<PlayerRatingAdjustment> getRatingHistory(Integer playerId, int size) {
+    public Optional<PlayerRatingAdjustment> getRating(String searchTerm) {
+        final Optional<Player> player = getPlayer(searchTerm);
+
+        return player.map(Player::getPlayerId).flatMap(this::getRatingByPlayerId);
+    }
+
+    public List<PlayerRatingAdjustment> getRatingHistoryByPlayerId(Integer playerId, int size) {
         Page<PlayerRatingAdjustment> ratingHistory =
             playerRatingAdjustmentRepository.findByPlayerId(playerId,
                 PageRequest.of(0, size, Sort.Direction.DESC, "adjustmentDate"));
 
         return ratingHistory.getContent();
+    }
+
+    public List<PlayerRatingAdjustment> getRatingHistory(String searchTerm, int size) {
+        final Optional<Player> player = getPlayer(searchTerm);
+
+        return player.map(Player::getPlayerId).map(id -> getRatingHistoryByPlayerId(id, size)).orElse(
+                Collections.emptyList());
     }
 
     public PlayerRatingAdjustment addPlayerRatingAdjustment(PlayerRatingAdjustment playerRatingAdjustment) {
@@ -281,7 +294,7 @@ public class RatingManager {
 
             try {
                 final Integer rating = Integer.parseInt(playerRating.getRating());
-                final Integer prevRating = getRating(player.get().getPlayerId())
+                final Integer prevRating = getRatingByPlayerId(player.get().getPlayerId())
                         .map(PlayerRatingAdjustment::getFinalRating)
                         .orElse(0);
                 playerRatingAdjustment.setInitialRating(prevRating);
@@ -467,7 +480,7 @@ public class RatingManager {
         playerSet.forEach(p -> {
             final Optional<PlayerRatingAdjustment> rating = playerRepository.findByUserName(p)
                     .map(Player::getPlayerId)
-                    .flatMap(this::getRating);
+                    .flatMap(this::getRatingByPlayerId);
 
             rating.map(r -> map.put(p, r));
         });
