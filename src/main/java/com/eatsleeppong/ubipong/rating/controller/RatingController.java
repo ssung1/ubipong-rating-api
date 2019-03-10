@@ -6,6 +6,7 @@ import com.eatsleeppong.ubipong.rating.model.TournamentResultRequest;
 import com.eatsleeppong.ubipong.rating.model.TournamentResultResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.print.attribute.standard.Media;
@@ -37,10 +38,12 @@ public class RatingController {
     }
 
     @PostMapping(value = "/rating-adjustment", consumes = "text/csv", produces = MediaType.APPLICATION_JSON_VALUE)
-    public RatingAdjustmentResponse postRatingAdjustmentByCsv(@RequestBody final String ratingAdjustmentCsv,
+    public ResponseEntity<RatingAdjustmentResponse> postRatingAdjustmentByCsv(
+            @RequestBody final String ratingAdjustmentCsv,
             @RequestParam(defaultValue = "false") final boolean autoAddPlayer)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
-        return this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, autoAddPlayer);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, autoAddPlayer));
     }
 
     @PostMapping(value = "/tournament-result", consumes = MediaType.APPLICATION_JSON_VALUE,

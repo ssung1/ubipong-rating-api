@@ -247,25 +247,18 @@ public class RatingManager {
         return adjustRating(ratingAdjustmentRequest, autoAddPlayer);
     }
 
-    private RatingAdjustmentResponse adjustRatingWithPlayerFinder(
-            final RatingAdjustmentRequest ratingAdjustmentRequest,
-            final Function<String, Optional<Player>> playerFinder)
-            throws DuplicateTournamentException {
-
-        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
-        final List<RatingAdjustmentRequestLineItem> playerRatingList = ratingAdjustmentRequest.getRatingAdjustmentList();
+    /**
+     * called exclusively by adjustRatingWithPlayerFinder to create a RatingAdjustmentResponseLineItem
+     * for every RatingAdjustmentRequestLineItem
+     * @param ratingAdjustmentRequestLineItemList
+     * @return
+     */
+    private List<RatingAdjustmentResponseLineItem> processRatingAdjustmentResponseLineItemList(
+            final List<RatingAdjustmentRequestLineItem> ratingAdjustmentRequestLineItemList,
+            final Function<String, Optional<Player>> playerFinder) {
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
-                new ArrayList<>(playerRatingList.size());
-
-        final String tournamentName = ratingAdjustmentRequest.getTournamentName();
-
-        if (getTournament(tournamentName).isPresent()) {
-            throw new DuplicateTournamentException(MessageFormat.format("Tournament \"{0}\" has already been recorded",
-                    tournamentName));
-        }
-
-        boolean isAllProcessed = true;
-        for (RatingAdjustmentRequestLineItem playerRating : playerRatingList) {
+                new ArrayList<>(ratingAdjustmentRequestLineItemList.size());
+        for (RatingAdjustmentRequestLineItem playerRating : ratingAdjustmentRequestLineItemList) {
             final RatingAdjustmentResponseLineItem ratingAdjustmentResponseLineItem = new RatingAdjustmentResponseLineItem();
             ratingAdjustmentResponseLineItemList.add(ratingAdjustmentResponseLineItem);
             ratingAdjustmentResponseLineItem.setOriginalRequest(playerRating);
@@ -283,7 +276,6 @@ public class RatingManager {
                 ratingAdjustmentResponseLineItem.setProcessed(false);
                 ratingAdjustmentResponseLineItem.setRejectReason(
                         RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
-                isAllProcessed = false;
                 continue;
             }
 
@@ -295,32 +287,53 @@ public class RatingManager {
                 playerRatingAdjustment.setInitialRating(prevRating);
                 playerRatingAdjustment.setFirstPassRating(prevRating);
                 playerRatingAdjustment.setFinalRating(rating);
-                playerRatingAdjustment.setAdjustmentDate(ratingAdjustmentRequest.getTournamentDate());
             } catch (Exception ex) {
                 ratingAdjustmentResponseLineItem.setProcessed(false);
                 ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING);
-                isAllProcessed = false;
                 continue;
             }
 
-            //playerRatingAdjustmentRepository.save(playerRatingAdjustment);
             ratingAdjustmentResponseLineItem.setAdjustmentResult(playerRatingAdjustment);
             ratingAdjustmentResponseLineItem.setProcessed(true);
         }
 
+        return ratingAdjustmentResponseLineItemList;
+    }
+
+    private RatingAdjustmentResponse adjustRatingWithPlayerFinder(
+            final RatingAdjustmentRequest ratingAdjustmentRequest,
+            final Function<String, Optional<Player>> playerFinder)
+            throws DuplicateTournamentException {
+        final String tournamentName = ratingAdjustmentRequest.getTournamentName();
+        final Date tournamentDate = ratingAdjustmentRequest.getTournamentDate();
+
+        final RatingAdjustmentResponse result = new RatingAdjustmentResponse();
+        result.setTournamentDate(tournamentDate);
+        result.setTournamentName(tournamentName);
+
+        if (getTournament(tournamentName).isPresent()) {
+            throw new DuplicateTournamentException(MessageFormat.format("Tournament \"{0}\" has already been recorded",
+                    tournamentName));
+        }
+
+        final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
+                processRatingAdjustmentResponseLineItemList(ratingAdjustmentRequest.getRatingAdjustmentList(),
+                        playerFinder);
+
+        final boolean isAllProcessed = ratingAdjustmentResponseLineItemList.stream()
+                .allMatch(RatingAdjustmentResponseLineItem::isProcessed);
         // we only do the database operation if all the records pass sanity check
         if (isAllProcessed) {
             final Tournament tournament = new Tournament();
             tournament.setName(tournamentName);
-            tournament.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
+            tournament.setTournamentDate(tournamentDate);
             final Tournament savedTournament = tournamentRepository.save(tournament);
 
-            result.setTournamentDate(ratingAdjustmentRequest.getTournamentDate());
-            result.setTournamentName(ratingAdjustmentRequest.getTournamentName());
             result.setTournamentId(savedTournament.getTournamentId());
 
             ratingAdjustmentResponseLineItemList.forEach(adj -> {
                 adj.getAdjustmentResult().setTournamentId(savedTournament.getTournamentId());
+                adj.getAdjustmentResult().setAdjustmentDate(tournamentDate);
 
                 // .getAdjustmentResult is where we keep the PlayerRatingAdjustment entities
                 final PlayerRatingAdjustment savedAdj = playerRatingAdjustmentRepository.save(
@@ -329,6 +342,7 @@ public class RatingManager {
                 adj.setAdjustmentResult(savedAdj);
             });
             result.setRatingAdjustmentResponseList(ratingAdjustmentResponseLineItemList);
+            result.setProcessed(true);
         } else {
             final List<RatingAdjustmentResponseLineItem> errorList = ratingAdjustmentResponseLineItemList
                     .stream().filter(r -> !r.isProcessed())

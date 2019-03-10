@@ -16,4 +16,14 @@ public class RatingAdjustmentResponse {
     private Date tournamentDate;
 
     private List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseList;
+
+    private Boolean processed;
+
+    public boolean isProcessed() {
+        if (processed == null) {
+            return false;
+        } else {
+            return processed;
+        }
+    }
 }

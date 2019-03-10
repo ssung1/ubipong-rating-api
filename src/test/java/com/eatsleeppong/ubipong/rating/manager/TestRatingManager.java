@@ -256,6 +256,7 @@ public class TestRatingManager {
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
+        assertTrue(ratingAdjustmentResponse.isProcessed());
         assertTrue(ratingAdjustmentResponseLineItemList.get(0).getProcessed());
         assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getPlayerUserName(), is("spongebob"));
         assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getRating(), is("1000"));
