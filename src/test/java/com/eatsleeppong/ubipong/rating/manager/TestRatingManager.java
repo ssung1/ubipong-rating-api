@@ -257,10 +257,10 @@ public class TestRatingManager {
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
         assertTrue(ratingAdjustmentResponse.isProcessed());
-        assertTrue(ratingAdjustmentResponseLineItemList.get(0).getProcessed());
+        assertTrue(ratingAdjustmentResponseLineItemList.get(0).isProcessed());
         assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getPlayerUserName(), is("spongebob"));
         assertThat(ratingAdjustmentResponseLineItemList.get(0).getOriginalRequest().getRating(), is("1000"));
-        assertTrue(ratingAdjustmentResponseLineItemList.get(1).getProcessed());
+        assertTrue(ratingAdjustmentResponseLineItemList.get(1).isProcessed());
         assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getPlayerUserName(), is("patrick"));
         assertThat(ratingAdjustmentResponseLineItemList.get(1).getOriginalRequest().getRating(), is("1100"));
 
@@ -290,7 +290,8 @@ public class TestRatingManager {
             ratingAdjustmentResponse.getRatingAdjustmentResponseList();
         final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
-        assertFalse(playerRatingResult.getProcessed());
+        assertFalse(ratingAdjustmentResponse.isProcessed());
+        assertFalse(playerRatingResult.isProcessed());
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
 
@@ -311,7 +312,8 @@ public class TestRatingManager {
             ratingAdjustmentResponse.getRatingAdjustmentResponseList();
         final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
-        assertFalse(playerRatingResult.getProcessed());
+        assertFalse(ratingAdjustmentResponse.isProcessed());
+        assertFalse(playerRatingResult.isProcessed());
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
 
@@ -325,7 +327,7 @@ public class TestRatingManager {
     @Test
     public void adjustPlayerRatingByCsvInvalidPlayerNoAutoAddGoodRecordNotAdded() throws Exception {
         final String inputString =
-                "tournamentName, test-tournament-1\n" +
+                "tournamentName, " + tournamentName1 + "\n" +
                 "date, " + tournamentDate1 + "\n" +
                 "player, rating\n" +
                 "spongebob,    1000\n" +
@@ -337,6 +339,8 @@ public class TestRatingManager {
                 ratingManager.adjustRatingByCsv(inputString, false);
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
+
+        assertFalse(ratingAdjustmentResponse.isProcessed());
         // if there is an error, only errors are reported
         assertThat(ratingAdjustmentResponseLineItemList, hasSize(1));
 
@@ -346,6 +350,9 @@ public class TestRatingManager {
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
 
+        final Optional<Tournament> tournament = ratingManager.getTournament(tournamentName1);
+        assertFalse("Tournament should not have been created because spongebob rating failed to add",
+                tournament.isPresent());
         final Optional<PlayerRatingAdjustment> patrickRating = ratingManager.getRating(patrickId);
         assertFalse("Patrick rating should not be added because spongebob rating failed to add",
                 patrickRating.isPresent());
@@ -375,15 +382,18 @@ public class TestRatingManager {
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
 
+        final Optional<Tournament> tournament = ratingManager.getTournament(tournamentName1);
+        assertFalse("Tournament should not have been created because a rating was invalid",
+                tournament.isPresent());
         final Optional<PlayerRatingAdjustment> patrickRating = ratingManager.getRating(patrickId);
-        assertFalse("Patrick rating should not be added because spongebob rating failed to add",
+        assertFalse("Patrick rating should not be added because another record has invalid rating",
                 patrickRating.isPresent());
     }
 
     @Test
     public void adjustPlayerRatingByCsvInvalidPlayerWithAutoAdd() throws Exception {
         final String inputString =
-                "tournamentName, test-tournament-1\n" +
+                "tournamentName, " + tournamentName1 + "\n" +
                 "date, " + tournamentDate1 + "\n" +
                 "player, rating\n" +
                 "spongebob,      1000\n";
@@ -394,7 +404,9 @@ public class TestRatingManager {
             ratingAdjustmentResponse.getRatingAdjustmentResponseList();
         final RatingAdjustmentResponseLineItem playerRatingResult = ratingAdjustmentResponseLineItemList.get(0);
 
-        assertTrue(playerRatingResult.getProcessed());
+        assertTrue(ratingAdjustmentResponse.isProcessed());
+        assertTrue(playerRatingResult.isProcessed());
+        assertTrue(ratingManager.getTournament(tournamentName1).isPresent());
 
         final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
 
@@ -476,6 +488,7 @@ public class TestRatingManager {
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
                 ratingAdjustmentResponse.getRatingAdjustmentResponseList();
 
+        assertFalse(ratingAdjustmentResponse.isProcessed());
         assertThat(ratingAdjustmentResponseLineItemList.get(0).getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER));
         assertThat(ratingAdjustmentResponseLineItemList.get(1).getRejectReason(),

@@ -42,8 +42,13 @@ public class RatingController {
             @RequestBody final String ratingAdjustmentCsv,
             @RequestParam(defaultValue = "false") final boolean autoAddPlayer)
             throws IOException, RatingInputFormatException, DuplicateTournamentException {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(this.ratingManager.adjustRatingByCsv(ratingAdjustmentCsv, autoAddPlayer));
+        final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.adjustRatingByCsv(ratingAdjustmentCsv,
+                autoAddPlayer);
+        if (ratingAdjustmentResponse.isProcessed()) {
+            return ResponseEntity.status(HttpStatus.OK).body(ratingAdjustmentResponse);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ratingAdjustmentResponse);
+        }
     }
 
     @PostMapping(value = "/tournament-result", consumes = MediaType.APPLICATION_JSON_VALUE,
