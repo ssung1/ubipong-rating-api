@@ -300,6 +300,7 @@ public class RatingManager {
         return ratingAdjustmentResponseLineItemList;
     }
 
+    @Transactional
     private RatingAdjustmentResponse adjustRatingWithPlayerFinder(
             final RatingAdjustmentRequest ratingAdjustmentRequest,
             final Function<String, Optional<Player>> playerFinder)
@@ -488,73 +489,110 @@ public class RatingManager {
         return playerSet;
     }
 
+    /**
+     * Called exclusively by submitTournamentResultWithPlayerFinder to create a TournamentResultResponseLineItem
+     * for each TournamentResultRequestLineItem
+     *
+     * The most important part of the response is the MatchResult, which contains the amount of the rating transfer
+     * between the players
+     *
+     * @param tournamentResultRequestLineItemList
+     * @param playerRatingAdjustmentMap
+     * @param playerFinder
+     * @return
+     */
+    private List<TournamentResultResponseLineItem> processTournamentResultRequestLineItemList(
+            final TournamentResultRequestLineItem[] tournamentResultRequestLineItemList,
+            final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap,
+            final Function<String, Optional<Player>> playerFinder) {
+        return Arrays.stream(tournamentResultRequestLineItemList).map(lineItem -> {
+            final TournamentResultResponseLineItem tournamentResultResponseLineItem =
+                    new TournamentResultResponseLineItem();
+            tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
+            if (!playerFinder.apply(lineItem.getWinner()).isPresent()) {
+                tournamentResultResponseLineItem.setRejectReason(
+                        TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER);
+                tournamentResultResponseLineItem.setProcessed(false);
+                return tournamentResultResponseLineItem;
+            }
+            if (!playerFinder.apply(lineItem.getLoser()).isPresent()) {
+                tournamentResultResponseLineItem.setRejectReason(
+                        TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER);
+                tournamentResultResponseLineItem.setProcessed(false);
+                return tournamentResultResponseLineItem;
+            }
+            final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
+            tournamentResultResponseLineItem.setMatchResult(matchResult);
+            tournamentResultResponseLineItem.setProcessed(true);
+            return tournamentResultResponseLineItem;
+        }).collect(Collectors.toList());
+    }
+
     @Transactional
-    public TournamentResultResponse submitTournamentResultWithPlayerFinder(
+    private TournamentResultResponse submitTournamentResultWithPlayerFinder(
             final TournamentResultRequest tournamentResultRequest,
             final Function<String, Optional<Player>> playerFinder)
             throws DuplicateTournamentException {
         final String tournamentName = tournamentResultRequest.getTournamentName();
+        final Date tournamentDate = tournamentResultRequest.getTournamentDate();
 
         if (getTournament(tournamentName).isPresent()) {
             throw new DuplicateTournamentException(MessageFormat.format("Tournament '{0}' has already been submitted",
                     tournamentName));
         }
 
-        final Tournament tournament = new Tournament();
-        tournament.setName(tournamentName);
-        tournament.setTournamentDate(tournamentResultRequest.getTournamentDate());
-        final Tournament savedTournament = tournamentRepository.save(tournament);
-
         final TournamentResultResponse result = new TournamentResultResponse();
 
-        result.setTournamentName(tournamentResultRequest.getTournamentName());
-        result.setTournamentDate(tournamentResultRequest.getTournamentDate());
-        result.setTournamentId(savedTournament.getTournamentId());
+        result.setTournamentName(tournamentName);
+        result.setTournamentDate(tournamentDate);
 
-        final TournamentResultRequestLineItem[] tournamentResultList = tournamentResultRequest.getTournamentResultList();
+        final TournamentResultRequestLineItem[] tournamentResultList =
+                tournamentResultRequest.getTournamentResultList();
 
+        // create a map of player ratings; these are needed to calculate rating adjustments
         final Set<String> playerSet = getPlayerSet(tournamentResultList);
         final Map<String, PlayerRatingAdjustment> playerRatingAdjustmentMap = getPlayerRatingAdjustmentMap(playerSet);
 
+        // TournamentResultResponseLineItem contains MatchResult, which includes the amount of the rating transfer
         final List<TournamentResultResponseLineItem> tournamentResultResponseLineItemList =
-                Arrays.stream(tournamentResultList).map(lineItem -> {
-                    final TournamentResultResponseLineItem tournamentResultResponseLineItem =
-                            new TournamentResultResponseLineItem();
-                    if (!playerFinder.apply(lineItem.getWinner()).isPresent()) {
-                        tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
-                        tournamentResultResponseLineItem.setRejectReason(
-                                TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER);
-                        tournamentResultResponseLineItem.setProcessed(false);
-                        return tournamentResultResponseLineItem;
-                    }
-                    if (!playerFinder.apply(lineItem.getLoser()).isPresent()) {
-                        tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
-                        tournamentResultResponseLineItem.setRejectReason(
-                                TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER);
-                        tournamentResultResponseLineItem.setProcessed(false);
-                        return tournamentResultResponseLineItem;
-                    }
-                    final MatchResult matchResult = generateMatchResult(playerRatingAdjustmentMap, lineItem);
-                    tournamentResultResponseLineItem.setOriginalTournamentResultLineItem(lineItem);
-                    tournamentResultResponseLineItem.setMatchResult(matchResult);
-                    tournamentResultResponseLineItem.setProcessed(true);
-                    return tournamentResultResponseLineItem;
-                }).collect(Collectors.toList());
-        result.setTournamentResultResponseList(tournamentResultResponseLineItemList);
+                processTournamentResultRequestLineItemList(tournamentResultList, playerRatingAdjustmentMap,
+                        playerFinder);
 
-        final List<MatchResult> matchResultList = tournamentResultResponseLineItemList.stream()
-                .filter(TournamentResultResponseLineItem::isProcessed)
-                .map(TournamentResultResponseLineItem::getMatchResult).collect(Collectors.toList());
+        final boolean isAllProcessed = tournamentResultResponseLineItemList.stream()
+                .allMatch(TournamentResultResponseLineItem::isProcessed);
 
-        final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
-                applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
+        // only apply the tournament results all of the results have been validated
+        if (isAllProcessed) {
+            final List<MatchResult> matchResultList = tournamentResultResponseLineItemList.stream()
+                    .filter(TournamentResultResponseLineItem::isProcessed)
+                    .map(TournamentResultResponseLineItem::getMatchResult).collect(Collectors.toList());
 
-        newPlayerRatingAdjustmentMap.values().forEach(adjustment -> {
-            adjustment.setTournamentId(savedTournament.getTournamentId());
-            adjustment.setAdjustmentDate(savedTournament.getTournamentDate());
-            addPlayerRatingAdjustment(adjustment);
-        });
-        result.setRatingAdjustmentList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
+            // MatchResult only has the deltas
+            // We need to call applyMatchResultList to get the final ratings
+            final Map<Integer, PlayerRatingAdjustment> newPlayerRatingAdjustmentMap =
+                    applyMatchResultList(playerRatingAdjustmentMap, matchResultList);
+
+            final Tournament tournament = new Tournament();
+            tournament.setName(tournamentName);
+            tournament.setTournamentDate(tournamentDate);
+            final Tournament savedTournament = tournamentRepository.save(tournament);
+
+            result.setTournamentId(savedTournament.getTournamentId());
+
+            newPlayerRatingAdjustmentMap.values().forEach(adjustment -> {
+                adjustment.setTournamentId(savedTournament.getTournamentId());
+                adjustment.setAdjustmentDate(savedTournament.getTournamentDate());
+                addPlayerRatingAdjustment(adjustment);
+            });
+
+            result.setTournamentResultResponseList(tournamentResultResponseLineItemList);
+            result.setRatingAdjustmentList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
+        } else {
+            final List<TournamentResultResponseLineItem> errorList = tournamentResultResponseLineItemList.stream()
+                    .filter(r -> !r.isProcessed())
+                    .collect(Collectors.toList());
+            result.setTournamentResultResponseList(errorList);
+        }
 
         return result;
     }

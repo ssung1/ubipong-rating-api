@@ -282,7 +282,7 @@ public class TestRatingManager {
                 "tournamentName, " + tournamentName1 + "\n" +
                 "date, " + tournamentDate1 + "\n" +
                 "player, rating\n" +
-                "spongebob,      asdf\n";
+                spongeBobUserName + ",      asdf\n";
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
             ratingManager.adjustRatingByCsv(inputString, false);
@@ -294,6 +294,7 @@ public class TestRatingManager {
         assertFalse(playerRatingResult.isProcessed());
         assertThat(playerRatingResult.getRejectReason(),
                 is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_RATING));
+        assertThat(playerRatingResult.getOriginalRequest().getPlayerUserName(), is(spongeBobUserName));
 
         assertFalse(ratingManager.getTournament(tournamentName1).isPresent());
     }
@@ -763,7 +764,6 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore
     public void testSubmitTournamentResultInvalidWinner() throws Exception {
         ratingManager.addPlayer(patrick);
 
@@ -776,6 +776,7 @@ public class TestRatingManager {
         final TournamentResultResponseLineItem responseLineItem =
                 tournamentResultResponse.getTournamentResultResponseList().get(0);
 
+        assertFalse(tournamentResultResponse.isProcessed());
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
                 is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER));
@@ -786,7 +787,6 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore
     public void testSubmitTournamentResultInvalidLoser() throws Exception {
         ratingManager.addPlayer(spongeBob);
 
@@ -799,6 +799,7 @@ public class TestRatingManager {
         final TournamentResultResponseLineItem responseLineItem =
                 tournamentResultResponse.getTournamentResultResponseList().get(0);
 
+        assertFalse(tournamentResultResponse.isProcessed());
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
                 is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER));
@@ -809,8 +810,7 @@ public class TestRatingManager {
     }
 
     @Test
-    @Ignore
-    public void testSubmitTournamentResultCancelTransactionIfError() throws Exception {
+    public void testSubmitTournamentResultOnlyProcessIfNoErrors() throws Exception {
         initializeSpongeBobAndPatrick(1000, 1100);
 
         // patrick and spongebob have valid tournament result
@@ -836,13 +836,14 @@ public class TestRatingManager {
         final TournamentResultResponseLineItem responseLineItem =
                 tournamentResultResponse.getTournamentResultResponseList().get(0);
 
+        assertFalse(tournamentResultResponse.isProcessed());
         assertFalse(responseLineItem.isProcessed());
         assertThat(responseLineItem.getRejectReason(),
-                is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER));
+                is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_WINNER));
 
-        //ratingManager.getTournament(
+        // tournament should not be added if we cannot post result
+        assertFalse(ratingManager.getTournament(tournamentName2).isPresent());
     }
-
 
     @Test
     @Ignore
