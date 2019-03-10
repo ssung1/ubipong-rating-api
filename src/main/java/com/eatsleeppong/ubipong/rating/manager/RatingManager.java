@@ -37,17 +37,20 @@ public class RatingManager {
     private PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository;
     private TournamentRepository tournamentRepository;
     private RatingCalculator ratingCalculator;
+    private PlayerManager playerManager;
 
     public RatingManager(
-            PlayerRepository playerRepository,
-            PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository,
-            TournamentRepository tournamentRepository,
-            RatingCalculator ratingCalculator
+            final PlayerRepository playerRepository,
+            final PlayerRatingAdjustmentRepository playerRatingAdjustmentRepository,
+            final TournamentRepository tournamentRepository,
+            final RatingCalculator ratingCalculator,
+            final PlayerManager playerManager
     ) {
         this.playerRepository = playerRepository;
         this.playerRatingAdjustmentRepository = playerRatingAdjustmentRepository;
         this.tournamentRepository = tournamentRepository;
         this.ratingCalculator = ratingCalculator;
+        this.playerManager = playerManager;
     }
 
     public Optional<PlayerRatingAdjustment> getRatingByPlayerId(Integer playerId) {
@@ -59,7 +62,7 @@ public class RatingManager {
     }
 
     public Optional<PlayerRatingAdjustment> getRating(String searchTerm) {
-        final Optional<Player> player = getPlayer(searchTerm);
+        final Optional<Player> player = playerManager.getPlayer(searchTerm);
 
         return player.map(Player::getPlayerId).flatMap(this::getRatingByPlayerId);
     }
@@ -73,7 +76,7 @@ public class RatingManager {
     }
 
     public List<PlayerRatingAdjustment> getRatingHistory(String searchTerm, int size) {
-        final Optional<Player> player = getPlayer(searchTerm);
+        final Optional<Player> player = playerManager.getPlayer(searchTerm);
 
         return player.map(Player::getPlayerId).map(id -> getRatingHistoryByPlayerId(id, size)).orElse(
                 Collections.emptyList());
@@ -81,38 +84,6 @@ public class RatingManager {
 
     public PlayerRatingAdjustment addPlayerRatingAdjustment(PlayerRatingAdjustment playerRatingAdjustment) {
         return playerRatingAdjustmentRepository.save(playerRatingAdjustment);
-    }
-
-    public Player addPlayer(Player player) {
-        return playerRepository.save(player);
-    }
-
-    public Optional<Player> getPlayerById(Integer id) {
-        return playerRepository.findById(id);
-    }
-
-    /**
-     * @param search can be ID, username, or {firstname lastname}
-     * @return
-     */
-    public Optional<Player> getPlayer(final String search) {
-        return playerRepository.findByUserName(search);
-    }
-
-    public Integer getPlayerId(final String search) {
-        return getPlayer(search).map(Player::getPlayerId).orElse(null);
-    }
-
-    public Optional<Player> getOrCreatePlayer(final String search) {
-        final Optional<Player> existing = getPlayer(search);
-        if (existing.isPresent()) {
-            return existing;
-        }
-        final Player newUser = new Player();
-        // the search term becomes username
-        newUser.setUserName(search);
-
-        return Optional.of(playerRepository.save(newUser));
     }
 
     public RatingAdjustmentResponse verifyRatingByCsv(final String csv)
@@ -139,7 +110,7 @@ public class RatingManager {
             playerRatingResult.setOriginalRequest(playerRating);
 
             final String playerUserName = playerRating.getPlayerUserName();
-            final Optional<Player> player = getPlayer(playerUserName);
+            final Optional<Player> player = playerManager.getPlayer(playerUserName);
             if (!player.isPresent()) {
                 playerRatingResult.setProcessed(false);
                 playerRatingResult.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
@@ -371,9 +342,9 @@ public class RatingManager {
             final RatingAdjustmentRequest ratingAdjustmentRequest, final boolean autoAddPlayer)
             throws DuplicateTournamentException {
         if (autoAddPlayer) {
-            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, this::getOrCreatePlayer);
+            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, playerManager::getOrCreatePlayer);
         } else {
-            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, this::getPlayer);
+            return adjustRatingWithPlayerFinder(ratingAdjustmentRequest, playerManager::getPlayer);
         }
     }
 
@@ -614,9 +585,9 @@ public class RatingManager {
             boolean autoAddPlayer)
             throws DuplicateTournamentException {
         if (autoAddPlayer) {
-            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, this::getOrCreatePlayer);
+            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, playerManager::getOrCreatePlayer);
         } else {
-            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, this::getPlayer);
+            return submitTournamentResultWithPlayerFinder(tournamentResultRequest, playerManager::getPlayer);
         }
     }
 }

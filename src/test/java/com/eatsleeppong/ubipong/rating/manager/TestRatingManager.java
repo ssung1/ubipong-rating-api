@@ -35,6 +35,13 @@ import static org.junit.Assert.assertTrue;
 public class TestRatingManager {
     private final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
+    /**
+     * PlayerManager is just here to help with testing.  We could mock this, but this works so well that we don't need
+     * to
+     */
+    @Autowired
+    private PlayerManager playerManager;
+
     @Autowired
     private RatingManager ratingManager;
 
@@ -80,8 +87,8 @@ public class TestRatingManager {
     private void initializeSpongeBobAndPatrick(final Integer spongeBobFinalRating, final Integer patrickFinalRating)
             throws ParseException {
         // set up current rating
-        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
-        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+        final Integer spongeBobId = playerManager.addPlayer(spongeBob).getPlayerId();
+        final Integer patrickId = playerManager.addPlayer(patrick).getPlayerId();
 
         final PlayerRatingAdjustment spongeBobRating = new PlayerRatingAdjustment();
         spongeBobRating.setPlayerId(spongeBobId);
@@ -183,9 +190,8 @@ public class TestRatingManager {
 
         initializeSpongeBobAndPatrick(expectedFinalRating, expectedFinalRating);
 
-        final PlayerRatingAdjustment finalRating = ratingManager.getPlayer(spongeBobUserName)
-                .flatMap(p -> ratingManager.getRatingByPlayerId(p.getPlayerId())).orElseThrow(
-            () -> new AssertionError("Cannot get final rating")
+        final PlayerRatingAdjustment finalRating = ratingManager.getRating(spongeBobUserName).orElseThrow(
+                () -> new AssertionError("Cannot get final rating")
         );
         assertThat(finalRating.getFinalRating(), is(expectedFinalRating));
     }
@@ -205,7 +211,7 @@ public class TestRatingManager {
 
     @Test
     public void getPlayerRatingHistory() throws Exception {
-        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
+        final Integer spongeBobId = playerManager.addPlayer(spongeBob).getPlayerId();
 
         final String tournament1 =
                 "tournamentName, test-tournament-1\n" +
@@ -234,58 +240,9 @@ public class TestRatingManager {
     }
 
     @Test
-    public void addPlayer() {
-        final Player bob = ratingManager.addPlayer(spongeBob);
-
-        assertThat(bob.getPlayerId(), notNullValue());
-    }
-
-    @Test(expected = DataIntegrityViolationException.class)
-    public void userNameMustBeUnique() {
-        final String sameUserName = "same_user_name";
-        final Player a = new Player();
-        a.setUserName(sameUserName);
-
-        final Player b = new Player();
-        b.setUserName(sameUserName);
-
-        ratingManager.addPlayer(a);
-        ratingManager.addPlayer(b);
-
-        ratingManager.getPlayer(sameUserName);
-    }
-
-    @Test
-    public void getPlayerByUserName() {
-        ratingManager.addPlayer(spongeBob);
-
-        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
-
-        assertTrue(spongebob.isPresent());
-        assertThat(spongebob.get().getUserName(), is(spongeBobUserName));
-        assertThat(spongebob.map(Player::getUserName).orElse(null), is(spongeBobUserName));
-    }
-
-    @Test
-    public void getPlayerById() {
-        final Player spongebob1 = ratingManager.addPlayer(spongeBob);
-
-        final Optional<Player> spongebob2 = ratingManager.getPlayerById(spongebob1.getPlayerId());
-
-        assertThat(spongebob2.map(Player::getUserName).orElse(null), is(spongeBobUserName));
-    }
-
-    @Test
-    public void getPlayerByInvalidUserName() {
-        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
-
-        assertFalse(spongebob.isPresent());
-    }
-
-    @Test
     public void adjustPlayerRatingByCsv() throws Exception {
-        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
-        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+        final Integer spongeBobId = playerManager.addPlayer(spongeBob).getPlayerId();
+        final Integer patrickId = playerManager.addPlayer(patrick).getPlayerId();
 
         final String inputString =
                 "tournamentName, " + tournamentName1 + "\n" +
@@ -319,7 +276,7 @@ public class TestRatingManager {
 
     @Test
     public void adjustPlayerRatingByCsvInvalidRating() throws Exception {
-        ratingManager.addPlayer(spongeBob).getPlayerId();
+        playerManager.addPlayer(spongeBob).getPlayerId();
 
         final String inputString =
                 "tournamentName, " + tournamentName1 + "\n" +
@@ -377,7 +334,7 @@ public class TestRatingManager {
                 "spongebob,    1000\n" +
                 "patrick,      1000\n";
 
-        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+        final Integer patrickId = playerManager.addPlayer(patrick).getPlayerId();
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, false);
@@ -411,7 +368,7 @@ public class TestRatingManager {
                 "\"inva\"\"lid\",       Rating\n" +
                 "patrick,      1000\n";
 
-        final Integer patrickId = ratingManager.addPlayer(patrick).getPlayerId();
+        final Integer patrickId = playerManager.addPlayer(patrick).getPlayerId();
 
         final RatingAdjustmentResponse ratingAdjustmentResponse =
                 ratingManager.adjustRatingByCsv(inputString, true);
@@ -452,7 +409,7 @@ public class TestRatingManager {
         assertTrue(playerRatingResult.isProcessed());
         assertTrue(ratingManager.getTournament(tournamentName1).isPresent());
 
-        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
+        final Optional<Player> spongebob = playerManager.getPlayer(spongeBobUserName);
 
         final Integer spongeBobRating = spongebob
                 .flatMap(p -> ratingManager.getRatingByPlayerId(p.getPlayerId()))
@@ -481,7 +438,7 @@ public class TestRatingManager {
 
         assertTrue(playerRatingResult.getProcessed());
 
-        final Optional<Player> spongebob = ratingManager.getPlayer(spongeBobUserName);
+        final Optional<Player> spongebob = playerManager.getPlayer(spongeBobUserName);
         final Date spongeBobAdjustmentDate = spongebob
             .flatMap(p -> ratingManager.getRatingByPlayerId(p.getPlayerId()))
             .map(PlayerRatingAdjustment::getAdjustmentDate)
@@ -506,7 +463,7 @@ public class TestRatingManager {
         assertThat(tournament.get().getName(), is(tournamentName1));
         assertThat(tournament.get().getTournamentId(), is(greaterThan(0)));
 
-        final Optional<Player> spongeBob = ratingManager.getPlayer(spongeBobUserName);
+        final Optional<Player> spongeBob = playerManager.getPlayer(spongeBobUserName);
 
         assertThat(spongeBob.isPresent(), is(true));
 
@@ -526,7 +483,7 @@ public class TestRatingManager {
                 "spongebob,      1000\n" +
                 "patrick,        \n";
 
-        ratingManager.addPlayer(patrick);
+        playerManager.addPlayer(patrick);
 
         final RatingAdjustmentResponse ratingAdjustmentResponse = ratingManager.adjustRatingByCsv(inputString, false);
         final List<RatingAdjustmentResponseLineItem> ratingAdjustmentResponseLineItemList =
@@ -553,7 +510,7 @@ public class TestRatingManager {
 
     @Test
     public void adjustPlayerRatingByCsvCalculateInitialRating() throws Exception {
-        final Integer spongeBobId = ratingManager.addPlayer(spongeBob).getPlayerId();
+        final Integer spongeBobId = playerManager.addPlayer(spongeBob).getPlayerId();
 
         final String tournament1 =
                 "tournamentName, test-tournament-1\n" +
@@ -742,8 +699,8 @@ public class TestRatingManager {
         assertThat(ratingAdjustmentResponse.getRatingAdjustmentResponseList().get(0).getProcessed(), is(true));
         assertThat(ratingAdjustmentResponse.getRatingAdjustmentResponseList().get(1).getProcessed(), is(true));
 
-        final Integer spongeBobId = ratingManager.getPlayerId(spongeBobUserName);
-        final Integer patrickId = ratingManager.getPlayerId(patrickUserName);
+        final Integer spongeBobId = playerManager.getPlayerId(spongeBobUserName);
+        final Integer patrickId = playerManager.getPlayerId(patrickUserName);
 
         final TournamentResultRequest tournamentResultRequest =
                 createTournamentResultRequestForSpongeBobAndPatrick();
@@ -808,7 +765,7 @@ public class TestRatingManager {
 
     @Test
     public void testSubmitTournamentResultInvalidWinner() throws Exception {
-        ratingManager.addPlayer(patrick);
+        playerManager.addPlayer(patrick);
 
         final TournamentResultRequest tournamentResultRequest =
                 createTournamentResultRequestForSpongeBobAndPatrick();
@@ -831,7 +788,7 @@ public class TestRatingManager {
 
     @Test
     public void testSubmitTournamentResultInvalidLoser() throws Exception {
-        ratingManager.addPlayer(spongeBob);
+        playerManager.addPlayer(spongeBob);
 
         final TournamentResultRequest tournamentResultRequest =
                 createTournamentResultRequestForSpongeBobAndPatrick();
@@ -897,8 +854,8 @@ public class TestRatingManager {
     @Test
     @Ignore
     public void testSubmitTournamentResultPlayerExistsButHasNoRating() throws Exception {
-        ratingManager.addPlayer(spongeBob);
-        ratingManager.addPlayer(patrick);
+        playerManager.addPlayer(spongeBob);
+        playerManager.addPlayer(patrick);
 
         final TournamentResultRequest tournamentResultRequest =
                 createTournamentResultRequestForSpongeBobAndPatrick();
