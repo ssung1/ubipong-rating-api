@@ -16,7 +16,9 @@ public class MatchResult {
     private Integer matchResultId;
 
     private Integer tournamentId;
+    private String eventName;
     private Integer winnerId;
     private Integer loserId;
+    private String resultString;
     private Integer winnerRatingDelta;
 }
