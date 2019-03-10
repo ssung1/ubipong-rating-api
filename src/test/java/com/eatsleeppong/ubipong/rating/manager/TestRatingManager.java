@@ -845,8 +845,13 @@ public class TestRatingManager {
         assertFalse(ratingManager.getTournament(tournamentName2).isPresent());
     }
 
+    /**
+     * if the application works correctly, a player, if in the database, would always have a rating;
+     * however, if we ever run into the case where a player in the database does not have a rating, we
+     * would assign an initial rating
+     * @throws Exception
+     */
     @Test
-    @Ignore
     public void testSubmitTournamentResultPlayerExistsButHasNoRating() throws Exception {
         ratingManager.addPlayer(spongeBob);
         ratingManager.addPlayer(patrick);
@@ -860,10 +865,12 @@ public class TestRatingManager {
         final TournamentResultResponseLineItem responseLineItem =
                 tournamentResultResponse.getTournamentResultResponseList().get(0);
 
-        assertFalse(responseLineItem.isProcessed());
-        assertThat(responseLineItem.getRejectReason(),
-                is(TournamentResultResponseLineItem.REJECT_REASON_INVALID_LOSER));
-        assertThat(responseLineItem.getOriginalTournamentResultLineItem().getLoser(), is(patrickUserName));
+        assertTrue(tournamentResultResponse.isProcessed());
+        assertTrue(responseLineItem.isProcessed());
+        assertThat(responseLineItem.getOriginalTournamentResultLineItem().getWinner(), is(spongeBobUserName));
+
+        // tournament should not be added if we cannot post result
+        assertFalse(ratingManager.getTournament(tournamentName2).isPresent());
     }
 
     @Test
