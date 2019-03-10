@@ -107,7 +107,7 @@ public class TestRatingController {
                                 "player, rating\n" +
                                 "invalid-player, 1234\n"
                         ))
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().is4xxClientError())
                 .andExpect(jsonPath("ratingAdjustmentResponseList[0].processed").value(is(false)))
                 .andExpect(jsonPath("ratingAdjustmentResponseList[0].rejectReason")
                         .value(is(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER)));

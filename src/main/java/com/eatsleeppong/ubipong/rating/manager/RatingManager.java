@@ -277,8 +277,12 @@ public class RatingManager {
             if (player.isPresent()) {
                 playerRatingAdjustment.setPlayerId(player.get().getPlayerId());
             } else {
+                // we have decided to not throw exception in this case since we are prepared to handle cases where
+                // player does not exist.  this is following the principle that exceptions are only meant for
+                // unexpected errors.
                 ratingAdjustmentResponseLineItem.setProcessed(false);
-                ratingAdjustmentResponseLineItem.setRejectReason(RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
+                ratingAdjustmentResponseLineItem.setRejectReason(
+                        RatingAdjustmentResponseLineItem.REJECT_REASON_INVALID_PLAYER);
                 isAllProcessed = false;
                 continue;
             }

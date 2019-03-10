@@ -18,4 +18,7 @@ public class TournamentResultResponse {
 
     private List<TournamentResultResponseLineItem> tournamentResultResponseList;
     private List<PlayerRatingAdjustment> ratingAdjustmentList;
+
+    private Boolean processed;
+    private Integer rejectReason;
 }
