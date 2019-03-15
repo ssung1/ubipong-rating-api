@@ -66,6 +66,8 @@ public class TestRatingManager {
     private final String tournamentDate1 = "2018-12-28T00:00:00-0500";
     private final String tournamentDate2 = "2019-01-12T00:00:00-0500";
 
+    private final String eventTitle2 = "test-event-2";
+
     @Before
     public void setup() throws ParseException {
         spongeBob = new Player();
@@ -156,6 +158,7 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
+        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
 
         final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
         tournamentResultRequest.setTournamentName(tournamentName2);
@@ -573,9 +576,12 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
+        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
 
         final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
                 tournamentResultRequestLineItem);
+
+        assertThat(matchResult.getEventTitle(), is(eventTitle2));
         assertThat(matchResult.getWinnerId(), is(spongeBobId));
         assertThat(matchResult.getLoserId(), is(patrickId));
         assertThat(matchResult.getWinnerRatingDelta(), is(20));

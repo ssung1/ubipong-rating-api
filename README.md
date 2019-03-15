@@ -32,7 +32,7 @@ If application does not yet exist on Heroku:
 
 Deploy:
 
-    heroku deploy:jar target/my-app.jar --app sushi
+    heroku deploy:jar target/my-app.jar --app ubipong-rating-api
 
 
 ## Uploading Rating Adjustment
