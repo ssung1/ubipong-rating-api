@@ -18,4 +18,6 @@ public class Tournament {
     @Temporal(TemporalType.DATE)
     @Column(nullable = false)
     private Date tournamentDate;
+
+    private Integer accountId;
 }
