@@ -14,8 +14,10 @@ import javax.transaction.Transactional;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertFalse;
@@ -103,5 +105,26 @@ public class TestPlayerManager {
         final Optional<Player> spongebob = playerManager.getPlayer(spongeBobUserName);
 
         assertFalse(spongebob.isPresent());
+    }
+
+    @Test
+    public void findPlayerByUserNameStartingWith001() {
+        playerManager.addPlayer(spongeBob);
+        playerManager.addPlayer(squidward);
+
+        final List<Player> playerList = playerManager.findPlayerByUserNameStartingWith("s");
+
+        assertThat(playerList, hasSize(2));
+    }
+
+    @Test
+    public void findPlayerByUserNameStartingWith002() {
+        playerManager.addPlayer(spongeBob);
+        playerManager.addPlayer(squidward);
+
+        final List<Player> playerList = playerManager.findPlayerByUserNameStartingWith("sp");
+
+        assertThat(playerList, hasSize(1));
+        assertThat(playerList.get(0).getUserName(), is(spongeBobUserName));
     }
 }

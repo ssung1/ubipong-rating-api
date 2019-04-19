@@ -50,4 +50,8 @@ public class PlayerManager {
 
         return Optional.of(playerRepository.save(newUser));
     }
+
+    public List<Player> findPlayerByUserNameStartingWith(final String search) {
+        return playerRepository.findByUserNameStartingWith(search);
+    }
 }
