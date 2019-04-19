@@ -3,6 +3,8 @@ spring:
   data:
     rest:
       base-path: crud
+  jpa:
+    show-sql: true
 
 ---
 spring:
@@ -15,6 +17,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    show-sql: true
   h2:
     console:
       # use this to create an h2-only sql admin console within the application

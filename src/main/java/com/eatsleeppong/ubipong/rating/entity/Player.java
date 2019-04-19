@@ -6,6 +6,11 @@ import javax.persistence.*;
 
 @Data
 @Entity
+@Table(
+        indexes = {
+                @Index(name = "user_name_index", columnList = "userName", unique = false)
+        }
+)
 public class Player {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "player_seq")
