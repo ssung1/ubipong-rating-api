@@ -66,6 +66,24 @@ spring:
 
 ---
 spring:
+  profiles: pcf
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:mysql://MariaDBQASE8/qamdb80567?serverTimezone=UTC
+    username:
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  h2:
+    console:
+      # use this to create an h2-only sql admin console within the application
+      enabled: true
+      # go to http://{host}/{path} to see the sql admin console
+      path: /h2-console
+
+---
+spring:
   profiles: dev
 
 ---

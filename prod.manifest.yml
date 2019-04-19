@@ -1,0 +1,11 @@
+---
+applications:
+- name: ubipong-rating-api
+  path: ./build/libs/Returns.war
+  instances: 1
+  memory: 1GB
+  buildpack: https://github.com/cloudfoundry/java-buildpack.git#v4.12
+  routes:
+  - route: pingpong-api.apps-np.homedepot.com
+  env:
+    SPRING_PROFILES_ACTIVE: q2
