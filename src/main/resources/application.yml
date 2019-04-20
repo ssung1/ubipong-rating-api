@@ -37,7 +37,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
   h2:
     console:
       # use this to create an h2-only sql admin console within the application
@@ -56,7 +56,7 @@ spring:
     password: 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
   h2:
     console:
       # use this to create an h2-only sql admin console within the application
@@ -74,7 +74,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
   h2:
     console:
       # use this to create an h2-only sql admin console within the application
