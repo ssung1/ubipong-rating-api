@@ -572,11 +572,13 @@ public class RatingManager {
 
             result.setTournamentResultResponseList(tournamentResultResponseLineItemList);
             result.setRatingAdjustmentList(new ArrayList<>(newPlayerRatingAdjustmentMap.values()));
+            result.setProcessed(true);
         } else {
             final List<TournamentResultResponseLineItem> errorList = tournamentResultResponseLineItemList.stream()
                     .filter(r -> !r.isProcessed())
                     .collect(Collectors.toList());
             result.setTournamentResultResponseList(errorList);
+            result.setProcessed(false);
         }
 
         return result;

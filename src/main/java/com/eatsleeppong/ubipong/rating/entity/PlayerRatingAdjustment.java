@@ -31,7 +31,7 @@ public class PlayerRatingAdjustment implements Cloneable {
     @Column(nullable = false)
     private Integer playerId;
 
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
     private Date adjustmentDate;
 
