@@ -719,6 +719,7 @@ public class TestRatingManager {
         assertThat(tournamentResultResponse.getTournamentName(), is(tournamentName2));
         assertThat(tournamentResultResponse.getTournamentDate(), is(df.parse(tournamentDate2)));
         assertThat(tournamentResultResponse.getTournamentId(), notNullValue());
+        assertThat(tournamentResultResponse.getProcessed(), is(true));
 
         final List<TournamentResultResponseLineItem> tournamentResultResponseList =
                 tournamentResultResponse.getTournamentResultResponseList();
@@ -741,12 +742,13 @@ public class TestRatingManager {
         assertThat(ratingList.get(1).getFirstPassRating(), is(1000));
         assertThat(ratingList.get(1).getFinalRating(), anyOf(is(1008), is(992)));
 
-        final PlayerRatingAdjustment spongBobRatingAdjustment = ratingManager.getRatingByPlayerId(spongeBobId).orElseThrow(
+        final PlayerRatingAdjustment spongeBobRatingAdjustment = ratingManager.getRatingByPlayerId(spongeBobId).orElseThrow(
                 () -> new Exception("Could not get SpongeBob rating")
         );
-        assertThat(spongBobRatingAdjustment.getInitialRating(), is(1000));
-        assertThat(spongBobRatingAdjustment.getFirstPassRating(), is(1000));
-        assertThat(spongBobRatingAdjustment.getFinalRating(), is(1008));
+        assertThat(spongeBobRatingAdjustment.getInitialRating(), is(1000));
+        assertThat(spongeBobRatingAdjustment.getFirstPassRating(), is(1000));
+        assertThat(spongeBobRatingAdjustment.getFinalRating(), is(1008));
+        assertThat(spongeBobRatingAdjustment.getAdjustmentDate(), is(df.parse(tournamentDate2)));
 
         final PlayerRatingAdjustment patrickRatingAdjustment = ratingManager.getRatingByPlayerId(patrickId).orElseThrow(
                 () -> new Exception("Could not get Patrick rating")
@@ -754,6 +756,7 @@ public class TestRatingManager {
         assertThat(patrickRatingAdjustment.getInitialRating(), is(1000));
         assertThat(patrickRatingAdjustment.getFirstPassRating(), is(1000));
         assertThat(patrickRatingAdjustment.getFinalRating(), is(992));
+        assertThat(patrickRatingAdjustment.getAdjustmentDate(), is(df.parse(tournamentDate2)));
     }
 
     @Test(expected = DuplicateTournamentException.class)
