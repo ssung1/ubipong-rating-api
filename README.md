@@ -3,22 +3,25 @@
 ## Tournament Organization
 
 - Tournament (eg. Atlanta Giant Round Robin)
-- Event (eg. Prelim Group 1)
 
-  *An event is mapped to a "tournamentId" on challonge.com*
+  - Event (eg. Prelim Group 1)
 
-  *An event is represented by `List<MatchWrapper>`*
+    *An event is mapped to a "tournament" on challonge.com*
 
-- Round (eg. Round of 16)
+    *An event is represented by `List<MatchWrapper>`*
 
-  For single elimination, each round is defined by the number of
-  players in that round.
+    - Round (eg. Round of 16)
 
-  For round robin, the nth round is roughly the nth match of a single
-  playerId, but it is not as important to divide round robin into
-  rounds.
+      For single elimination, each round is defined by the number of
+      players in that round.
 
-- Match
+    - Round Robin Group
+
+      For round robin, the players are divided into groups.  Challonge.com
+      does not have support for this, so we need to simulate each group
+      as one "tournament" on challonge.com.
+
+      - Match
 
 ## Deploying to Heroku
 
