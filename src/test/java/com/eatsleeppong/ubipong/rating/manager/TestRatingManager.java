@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -66,7 +65,7 @@ public class TestRatingManager {
     private final String tournamentDate1 = "2018-12-28T00:00:00-0500";
     private final String tournamentDate2 = "2019-01-12T00:00:00-0500";
 
-    private final String eventTitle2 = "test-event-2";
+    private final String eventName2 = "test-event-2";
 
     @Before
     public void setup() throws ParseException {
@@ -158,7 +157,7 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
-        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
+        tournamentResultRequestLineItem.setEventName(eventName2);
 
         final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
         tournamentResultRequest.setTournamentName(tournamentName2);
@@ -576,12 +575,12 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
-        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
+        tournamentResultRequestLineItem.setEventName(eventName2);
 
         final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
                 tournamentResultRequestLineItem);
 
-        assertThat(matchResult.getEventTitle(), is(eventTitle2));
+        assertThat(matchResult.getEventName(), is(eventName2));
         assertThat(matchResult.getWinnerId(), is(spongeBobId));
         assertThat(matchResult.getLoserId(), is(patrickId));
         assertThat(matchResult.getWinnerRatingDelta(), is(20));

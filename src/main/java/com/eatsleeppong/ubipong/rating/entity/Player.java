@@ -24,7 +24,7 @@ public class Player {
     private String firstName;
     private String lastName;
 
-    private String affliation;
+    private String affiliation;
 
     private Integer accountId;
 }

@@ -397,7 +397,7 @@ public class RatingManager {
                 winnerRating.getFinalRating(), loserRating.getFinalRating());
 
         MatchResult matchResult = new MatchResult();
-        matchResult.setEventTitle(tournamentResultRequestLineItem.getEventTitle());
+        matchResult.setEventName(tournamentResultRequestLineItem.getEventName());
         matchResult.setWinnerId(winnerRating.getPlayerId());
         matchResult.setLoserId(loserRating.getPlayerId());
         matchResult.setWinnerRatingDelta(winnerRatingDelta);
