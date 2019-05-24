@@ -4,12 +4,12 @@
 
 The basic data structure includes:
 
-- Player, a player in the system, who has a rating
+- *Player*, a player in the system, who has a rating
 
-- Tournament, a set of matches played by a set of players, which would affect
+- *Tournament*, a set of matches played by a set of players, which would affect
 the players' ratings.
 
-- PlayerRatingAdjustment, represents a change in rating of a given Player. It
+- *PlayerRatingAdjustment*, represents a change in rating of a given Player. It
 has a many-to-one relationship to a Player.
 
 ## Upload Rating Adjustment
@@ -84,18 +84,4 @@ Deploy:
 
     heroku deploy:jar target/my-app.jar --app ubipong-rating-api
 
-
-## Uploading Rating Adjustment
-
-Rating adjustment only contains the players and the ratings.  These are not match results.  This is useful if you
-have lost the results and only want to update the player ratings.  The format of the payload is text/csv:
-
-    line 1                tournamentId         , {tournament name}
-    line 2                date                 , {date, in ISO8601 format}
-    line 3                player               , rating
-    line 4                {player1_username}   , {player1_rating}
-    line 5                {player2_username}   , {player2_rating}
-    line 6                {player3_username}   , {player3_rating}
-    ...
-Internally, the text/csv file is converted to a `RatingAdjustmentRequest`.
 

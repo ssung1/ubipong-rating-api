@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -158,7 +157,7 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
-        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
+        tournamentResultRequestLineItem.setEventName(eventTitle2);
 
         final TournamentResultRequest tournamentResultRequest = new TournamentResultRequest();
         tournamentResultRequest.setTournamentName(tournamentName2);
@@ -576,12 +575,12 @@ public class TestRatingManager {
         final TournamentResultRequestLineItem tournamentResultRequestLineItem = new TournamentResultRequestLineItem();
         tournamentResultRequestLineItem.setWinner(spongeBobUserName);
         tournamentResultRequestLineItem.setLoser(patrickUserName);
-        tournamentResultRequestLineItem.setEventTitle(eventTitle2);
+        tournamentResultRequestLineItem.setEventName(eventTitle2);
 
         final MatchResult matchResult = ratingManager.generateMatchResult(playerRatingAdjustmentMap,
                 tournamentResultRequestLineItem);
 
-        assertThat(matchResult.getEventTitle(), is(eventTitle2));
+        assertThat(matchResult.getEventName(), is(eventTitle2));
         assertThat(matchResult.getWinnerId(), is(spongeBobId));
         assertThat(matchResult.getLoserId(), is(patrickId));
         assertThat(matchResult.getWinnerRatingDelta(), is(20));
