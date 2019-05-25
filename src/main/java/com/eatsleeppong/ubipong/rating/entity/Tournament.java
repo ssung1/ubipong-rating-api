@@ -9,7 +9,7 @@ import java.util.Date;
 @Entity
 public class Tournament {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tournament_seq")
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "tournament_seq")
     private Integer tournamentId;
 
     @Column(nullable = false)

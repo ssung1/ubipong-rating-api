@@ -22,7 +22,7 @@ public class PlayerRatingAdjustment implements Cloneable {
     //     allocationSize = 10)
     // @GeneratedValue(strategy = GenerationType.TABLE, generator = "playerRatingAdjustmentGen")
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "player_rating_adjustment_seq")
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "player_rating_adjustment_seq")
     private Integer playerRatingAdjustmentId;
 
     @Column

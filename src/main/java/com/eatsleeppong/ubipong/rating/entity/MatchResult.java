@@ -12,7 +12,7 @@ import javax.persistence.Id;
 public class MatchResult {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "match_result_seq")
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "match_result_seq")
     private Integer matchResultId;
 
     private Integer tournamentId;

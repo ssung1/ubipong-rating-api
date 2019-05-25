@@ -8,7 +8,7 @@ import javax.persistence.*;
 @Entity
 public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "account_seq")
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "account_seq")
     private Integer accountId;
 
     @Column(nullable = false, unique = true)
