@@ -5,18 +5,29 @@ spring:
       base-path: crud
   jpa:
     show-sql: true
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
 
 ---
 spring:
   profiles: test
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    url:
-    username:
-    password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
+    show-sql: true
+
+---
+spring:
+  profiles: local
+  datasource:
+    # url specifies a file name, appended with ".mv.db"
+    # jdbc:h2:{filename}
+    url: 
+    username: 
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: validate
     show-sql: true
   h2:
     console:
@@ -27,69 +38,13 @@ spring:
 
 ---
 spring:
-  profiles: local
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    # url specifies a file name, appended with ".mv.db"
-    # jdbc:h2:{filename}
-    url:
-    username:
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  h2:
-    console:
-      # use this to create an h2-only sql admin console within the application
-      enabled: true
-      # go to http://{host}/{path} to see the sql admin console
-      path: /h2-console
+  profiles: pcf-qa
 
 ---
 spring:
-  profiles: inmotion
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    # url specifies a file name, appended with ".mv.db"
-    url: jdbc:mysql://eatsleeppong.com/eatsle12_ubipong
-    username:
-    password: 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  h2:
-    console:
-      # use this to create an h2-only sql admin console within the application
-      enabled: true
-      # go to http://{host}/{path} to see the sql admin console
-      path: /h2-console
+  profiles: pcf-prod
 
 ---
 spring:
-  profiles: pcf
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:mysql://MariaDBQASE8/qamdb80567?serverTimezone=UTC
-    username:
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  h2:
-    console:
-      # use this to create an h2-only sql admin console within the application
-      enabled: true
-      # go to http://{host}/{path} to see the sql admin console
-      path: /h2-console
-
----
-spring:
-  profiles: dev
-
----
-spring:
-  profiles: qa
-
----
-spring:
-  profiles: prod
+  profiles: heroku
+  
