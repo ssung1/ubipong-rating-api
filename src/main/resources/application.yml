@@ -8,6 +8,8 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
 
+allowedOrigins: "*"
+
 ---
 spring:
   profiles: test
@@ -43,8 +45,9 @@ spring:
 ---
 spring:
   profiles: pcf-prod
+allowedOrigins: "*"
 
 ---
 spring:
   profiles: heroku
-  
+allowedOrigins: "*"
