@@ -36,6 +36,7 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     runtimeOnly('com.h2database:h2')
     runtimeOnly('mysql:mysql-connector-java:8.0.9-rc')
+    runtimeOnly('org.postgresql:postgresql:42.2.5')
 
     // management stuff
     implementation('org.springframework.boot:spring-boot-starter-actuator')

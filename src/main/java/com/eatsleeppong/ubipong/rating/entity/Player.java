@@ -13,7 +13,7 @@ import javax.persistence.*;
 )
 public class Player {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "player_seq")
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "player_seq")
     private Integer playerId;
 
     @Column(nullable = false, unique = true)

@@ -1,17 +1,16 @@
 ---
 applications:
-- name: ubipong-rating-api
+- name: ubipong-rating-api-qa
   path: ./build/libs/ubipong-rating-api-0.0.1-SNAPSHOT.jar
   instances: 1
   memory: 1GB
   buildpack: https://github.com/cloudfoundry/java-buildpack.git#v4.16
   routes:
-  - route: pingpong-rating-api.apps-np.homedepot.com
+  - route: pingpong-rating-api-qa.apps-np.homedepot.com
   env:
-    SPRING_PROFILES_ACTIVE: pcf-prod
-    # SPRING_DATASOURCE_URL: 
-    # SPRING_DATASOURCE_USERNAME: 
-    # SPRING_DATASOURCE_PASSWORD: 
+    SPRING_PROFILES_ACTIVE: pcf-qa
+    # SPRING_DATASOURCE_URL:
+    # SPRING_DATASOURCE_USERNAME:
+    # SPRING_DATASOURCE_PASSWORD:
     SPRING_JPA_HIBERNATE_DDL-AUTO: validate
     SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL5InnoDBDialect
-
