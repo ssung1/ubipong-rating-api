@@ -47,11 +47,11 @@ spring:
 
 ---
 spring:
-  profiles: inmotion
+  profiles: heroku
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     # url specifies a file name, appended with ".mv.db"
-    url: jdbc:mysql://eatsleeppong.com/eatsle12_ubipong
+    url: 
     username:
     password: 
   jpa:
