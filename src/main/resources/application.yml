@@ -4,6 +4,8 @@ spring:
     rest:
       base-path: crud
   jpa:
+    hibernate:
+      ddl-auto: validate
     show-sql: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
@@ -16,7 +18,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
-    show-sql: true
 
 ---
 spring:
@@ -27,46 +28,22 @@ spring:
     url:
     username:
     password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
   h2:
     console:
       # use this to create an h2-only sql admin console within the application
       enabled: true
       # go to http://{host}/{path} to see the sql admin console
       path: /h2-console
+
+---
+spring:
+  profiles: pcf
 
 ---
 spring:
   profiles: heroku
   datasource:
-    type: com.zaxxer.hikari.HikariDataSource
     # url specifies a file name, appended with ".mv.db"
-    url: 
-    username:
-    password: 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
-  h2:
-    console:
-      # use this to create an h2-only sql admin console within the application
-      enabled: true
-      # go to http://{host}/{path} to see the sql admin console
-      path: /h2-console
-
----
-spring:
-  profiles: pcf-qa
-
----
-spring:
-  profiles: pcf-prod
-allowedOrigins: "*"
-
----
-spring:
-  profiles: heroku
-allowedOrigins: "*"
+    url: (set this in heroku)
+    username: (set this in heroku)
+    password: (set this in heroku)
